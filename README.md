@@ -1,4 +1,6 @@
-# FAIVOR Validator library
+# ML Model Validator
+
+Validator library for ML models.
 
 ![](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![GitHub license](https://img.shields.io/github/license/MaastrichtU-BISS/FAIVOR-backend)
