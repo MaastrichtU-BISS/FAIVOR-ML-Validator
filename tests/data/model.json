@@ -1,0 +1,99 @@
+{
+    "@context": {
+      "Additional concerns": "https://schema.metadatacenter.org/properties/2ff0fa8b-68f9-4985-b76c-35634ae01290",
+      "Applicability criteria": "https://schema.metadatacenter.org/properties/d48594b6-31eb-4316-a3a1-33d8e6e583c1",
+      "Contact email": "http://schema.org/email",
+      "Created by": "http://www.geneontology.org/formats/oboInOwl#created_by",
+      "Creation date": "http://www.geneontology.org/formats/oboInOwl#creation_date",
+      "Data": "https://schema.metadatacenter.org/properties/b13c5016-53e9-4a8c-b41d-7e9f2a15b197",
+      "Editor Note": "http://purl.obolibrary.org/obo/IAO_0000116",
+      "FAIRmodels image name": "https://schema.metadatacenter.org/properties/beab7682-9e35-4de7-8eb6-61eed3152c5b",
+      "Foundational model or algorithm used": "https://schema.metadatacenter.org/properties/bec76f3e-c11b-4b15-a71c-4fe6c357e37d",
+      "Human life": "https://schema.metadatacenter.org/properties/2c367688-430e-4fe2-99ef-4eb78ee34a0e",
+      "Input": "https://schema.metadatacenter.org/properties/6b6846ba-4e4f-44d4-8349-12147de2cda5",
+      "Mitigations": "https://schema.metadatacenter.org/properties/6996b03d-0025-4ed9-9a24-a4b114759bd5",
+      "Out-of-scope use cases": "https://schema.metadatacenter.org/properties/6da657f8-feed-435b-ac54-cd46def87ab2",
+      "Outcome": "https://schema.metadatacenter.org/properties/9cb9445b-3f63-48d3-8989-e2444e2b9a45",
+      "Primary intended use(s)": "https://schema.metadatacenter.org/properties/daed2a8a-bc5d-447a-bfbf-7a52f3a34974",
+      "Primary intended users": "https://schema.metadatacenter.org/properties/82f9a987-4c1f-4bd9-9156-ee3cd05840b4",
+      "Reference to code": "https://schema.metadatacenter.org/properties/48fa46ee-5e7b-48af-bbb6-9ea0cd2da3b8",
+      "References": "http://purl.org/dc/terms/references",
+      "Risks and harms": "https://schema.metadatacenter.org/properties/ba96d72e-7271-49af-8db5-1ba2857457f1",
+      "Software License": "http://purl.obolibrary.org/obo/ERO_0001824",
+      "Title": "http://purl.org/dc/terms/title",
+      "Use cases": "https://schema.metadatacenter.org/properties/5eefd8ad-66b4-4fff-b5a0-b5cb7b832d2d",
+      "oslc": "http://open-services.net/ns/core#",
+      "oslc:modifiedBy": {"@type": "@id"},
+      "pav": "http://purl.org/pav/",
+      "pav:createdBy": {"@type": "@id"},
+      "pav:createdOn": {"@type": "xsd:dateTime"},
+      "pav:derivedFrom": {"@type": "@id"},
+      "pav:lastUpdatedOn": {"@type": "xsd:dateTime"},
+      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+      "rdfs:label": {"@type": "xsd:string"},
+      "schema": "http://schema.org/",
+      "schema:description": {"@type": "xsd:string"},
+      "schema:isBasedOn": {"@type": "@id"},
+      "schema:name": {"@type": "xsd:string"},
+      "skos": "http://www.w3.org/2004/02/skos/core#",
+      "skos:notation": {"@type": "xsd:string"},
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
+    },
+    "@id": "https://v2.fairmodels.org/instance/3f400afb-df5e-4798-ad50-0687dd439d9b",
+    "Additional concerns": [null],
+    "Applicability criteria": [
+      "Patients diagnosed with rectal cancer",
+      "Patients (to be) treated with radiation therapy"
+    ],
+    "Contact email": "j.vansoest@maastrichtuniversity.nl",
+    "Created by": "Johan van Soest",
+    "Creation date": "2024-08-19",
+    "Data": [
+      "Data used during model development was derived from clinical practice (patients). All data was retrospectively analyzed, and approved by the clinical trial for which patients did provide informed consent."
+    ],
+    "Editor Note": "Based on Stiphout et al. (2011) - clinical variables only",
+    "FAIRmodels image name": "jvsoest/stiphout_pcr:latest",
+    "Foundational model or algorithm used": "Logistic Regression",
+    "Human life": [
+      "Model is intended to support clinicians in deciding whether adjuvant treatment (after radiation therapy) is necessary. If a pathologic complete response is predicted, clinicians might opt for watch-and-wait (more follow-up CT/MRI scans) instead of surgery. In case of pCR it could save the patient from potential unnecessary surgery"
+    ],
+    "Input": [
+      {
+        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C200479",
+        "rdfs:label": "Tumor Length"
+      },
+      {
+        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48885",
+        "rdfs:label": "Generic Primary Tumor TNM Finding"
+      },
+      {
+        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48884",
+        "rdfs:label": "Generic Regional Lymph Nodes TNM Finding"
+      }
+    ],
+    "Mitigations": [
+      "If pCR is predicted, the risk of false-positives (prediction of pCR, but tumor tissue still available) can be mitigated by watch-and-wait approach with more frequent medical imaging."
+    ],
+    "Out-of-scope use cases": ["Automated clinical decision making"],
+    "Outcome": {
+      "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C123603",
+      "rdfs:label": "Pathologic Complete Response"
+    },
+    "Primary intended use(s)": ["Prediction of pathologic complete response before start of treatment"],
+    "Primary intended users": ["Clinicians"],
+    "Reference to code": [null],
+    "References": ["https://doi.org/10.1016/j.radonc.2010.12.002"],
+    "Risks and harms": [
+      "Risk could be the low prediction rate, which would indicate a low number of pCR cases (10-15-20% in usual cases), which would mean patients would be referred for surgery instead of more frequent follow-up."
+    ],
+    "Software License": {
+      "@id": "http://www.ebi.ac.uk/swo/license/SWO_1000001",
+      "rdfs:label": "Creative Commons"
+    },
+    "Title": "Prediction of pathologic complete response for rectal cancer patients",
+    "Use cases": [null],
+    "pav:createdOn": "2024-11-28T16:49:15.322475+00:00",
+    "pav:lastUpdatedOn": "2024-11-28T16:49:15.327621+00:00",
+    "schema:isBasedOn": "https://repo.metadatacenter.org/templates/a5287cb7-0b68-4bbd-8236-950f25df1ad7"
+  }
+  
