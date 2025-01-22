@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import numpy as np
 import torch
@@ -5,7 +6,7 @@ from faivor.metrics.regression.explainability import RegressionExplainabilityMet
 
 class TestRegressionExplainabilityMetrics(unittest.TestCase):
     def setUp(self):
-        # Sample regression data
+        # Sample Regression Data (Same as in original test.py, but smaller and more suitable for unit tests)
          self.feature_importances_reg = np.array([0.1, 0.2, 0.7, 0.05, 0.05])
          self.y_true_reg = np.array([3, -0.5, 2, 7])
          self.y_pred_reg = np.array([2.5, 0.0, 2.1, 7.8])
@@ -20,10 +21,7 @@ class TestRegressionExplainabilityMetrics(unittest.TestCase):
                          result = getattr(self.metrics, name)(self.feature_importances_reg)
                      else:
                           result = getattr(self.metrics, name)(self.y_true_reg, self.y_pred_reg)
-                     self.assertIsNotNone(result, f"Metric {name} returned None")
+                     assert result is not None, f"Metric {name} returned None"
 
                 except Exception as e:
-                   self.fail(f"Metric {name} raised an exception: {e}")
-
-if __name__ == '__main__':
-    unittest.main()
+                    pytest.fail(f"Metric {name} raised an exception: {e}")
