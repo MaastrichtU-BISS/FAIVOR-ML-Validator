@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from faivor.metrics.classification.performance import ClassificationPerformanceMetrics
+from ...metrics.classification.performance import ClassificationPerformanceMetrics
 
 
 class TestClassificationPerformanceMetrics(unittest.TestCase):
