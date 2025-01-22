@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from src.faivor.metrics.regression.explainability import RegressionExplainabilityMetrics
+from faivor.metrics.regression.explainability import RegressionExplainabilityMetrics
 
 class TestRegressionExplainabilityMetrics(unittest.TestCase):
     def setUp(self):

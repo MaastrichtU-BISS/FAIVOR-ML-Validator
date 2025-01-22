@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from src.faivor.metrics.classification.fairness import ClassificationFairnessMetrics
+from faivor.metrics.classification.fairness import ClassificationFairnessMetrics
 
 class TestClassificationFairnessMetrics(unittest.TestCase):
 

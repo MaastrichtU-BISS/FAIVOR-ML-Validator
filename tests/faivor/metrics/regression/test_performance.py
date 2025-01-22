@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from src.faivor.metrics.regression.performance import RegressionPerformanceMetrics
+from faivor.metrics.regression.performance import RegressionPerformanceMetrics
 
 
 class TestRegressionPerformanceMetrics(unittest.TestCase):

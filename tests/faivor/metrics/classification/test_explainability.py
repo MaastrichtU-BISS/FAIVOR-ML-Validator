@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from src.faivor.metrics.classification.explainability import ClassificationExplainabilityMetrics
+from faivor.metrics.classification.explainability import ClassificationExplainabilityMetrics
 
 
 class TestClassificationExplainabilityMetrics(unittest.TestCase):

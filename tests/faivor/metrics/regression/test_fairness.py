@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from src.faivor.metrics.regression.fairness import RegressionFairnessMetrics
+from faivor.metrics.regression.fairness import RegressionFairnessMetrics
 
 class TestRegressionFairnessMetrics(unittest.TestCase):
 
