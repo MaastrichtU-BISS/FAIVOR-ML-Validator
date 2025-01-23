@@ -30,13 +30,27 @@ class ClassificationPerformanceMetricsMeta(type):
     ]
 
     def __new__(mcs, name, bases, dct):
-        """Creates a new class, inheriting from skm metrics."""
-        for metric_name in mcs._WHITELISTED_METRICS:
+        """Creates a new class, inheriting from sklearn.metrics."""
+        
+        def create_metric_function(metric_name):
+            """Factory function to create a metric wrapper."""
             metric_function = getattr(skm, metric_name, None)
-            if metric_function:
-                def method_wrapper(self, y_true, y_pred, **kwargs):
-                    return metric_function(y_true, y_pred, **kwargs)
-                dct[metric_name] = method_wrapper
+            if metric_function is None:
+                raise ValueError(f"Metric '{metric_name}' not found in sklearn.metrics.")
+
+            def method_wrapper(self, y_true, y_pred, **kwargs):
+                """Wrapper for sklearn.metrics functions."""
+                return metric_function(y_true, y_pred, **kwargs)
+
+            method_wrapper.__name__ = metric_name
+            method_wrapper.__doc__ = metric_function.__doc__
+            return method_wrapper
+
+        # Dynamically add methods for whitelisted metrics
+        for metric_name in mcs._WHITELISTED_METRICS:
+            if hasattr(skm, metric_name):  # Ensure the metric exists in sklearn.metrics
+                dct[metric_name] = create_metric_function(metric_name)
+
         return super().__new__(mcs, name, bases, dct)
 
 

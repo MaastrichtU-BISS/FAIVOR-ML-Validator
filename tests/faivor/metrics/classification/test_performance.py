@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import torch
+from sklearn import metrics as skm
 from faivor.metrics.classification.performance import ClassificationPerformanceMetrics
 
 
@@ -16,6 +17,8 @@ def test_all_performance_metrics():
             try:
                 if name == "custom_error_rate":
                     result = getattr(metrics, name)(y_true_class, y_pred_class)
+                elif name == "f1_score":
+                    assert getattr(metrics, name)(y_true_class, y_pred_class)  == skm.f1_score(y_true_class, y_pred_class)
                 else:
                     result = getattr(metrics, name)(y_true_class, y_pred_class)
                 assert result is not None, f"Metric {name} returned None"
