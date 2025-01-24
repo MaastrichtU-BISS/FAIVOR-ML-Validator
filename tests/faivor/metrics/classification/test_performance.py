@@ -17,8 +17,9 @@ def test_all_performance_metrics():
             try:
                 if name == "custom_error_rate":
                     result = getattr(metrics, name)(y_true_class, y_pred_class)
-                elif name == "f1_score":
-                    assert getattr(metrics, name)(y_true_class, y_pred_class)  == skm.f1_score(y_true_class, y_pred_class)
+                elif name == "accuracy_score":
+                    result = getattr(metrics, name)(y_true_class, y_pred_class)
+                    assert result  == skm.accuracy_score(y_true_class, y_pred_class)
                 else:
                     result = getattr(metrics, name)(y_true_class, y_pred_class)
                 assert result is not None, f"Metric {name} returned None"

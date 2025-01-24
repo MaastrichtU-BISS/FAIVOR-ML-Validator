@@ -4,7 +4,7 @@ import torch
 from faivor.metrics.regression.fairness import RegressionFairnessMetrics
 
 
-# Sample Regression Data
+# Sample Regression Data (Same as in original test.py, but smaller and more suitable for unit tests)
 y_true_reg = np.array([3, -0.5, 2, 7, 4.2, 1, 9])
 y_pred_reg = np.array([2.5, 0.0, 2.1, 7.8, 3.9, 1.1, 8.5])
 sensitive_attribute_reg = np.array([0, 1, 0, 1, 0, 1, 0])

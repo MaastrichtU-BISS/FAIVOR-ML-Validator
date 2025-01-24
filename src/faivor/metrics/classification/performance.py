@@ -28,31 +28,27 @@ class ClassificationPerformanceMetricsMeta(type):
         "zero_one_loss",
         "confusion_matrix"
     ]
-
+    
     def __new__(mcs, name, bases, dct):
         """Creates a new class, inheriting from sklearn.metrics."""
-        
-        def create_metric_function(metric_name):
-            """Factory function to create a metric wrapper."""
-            metric_function = getattr(skm, metric_name, None)
-            if metric_function is None:
-                raise ValueError(f"Metric '{metric_name}' not found in sklearn.metrics.")
-
-            def method_wrapper(self, y_true, y_pred, **kwargs):
-                """Wrapper for sklearn.metrics functions."""
-                return metric_function(y_true, y_pred, **kwargs)
-
-            method_wrapper.__name__ = metric_name
-            method_wrapper.__doc__ = metric_function.__doc__
-            return method_wrapper
-
-        # Dynamically add methods for whitelisted metrics
         for metric_name in mcs._WHITELISTED_METRICS:
-            if hasattr(skm, metric_name):  # Ensure the metric exists in sklearn.metrics
-                dct[metric_name] = create_metric_function(metric_name)
-
+            if hasattr(skm, metric_name):  # Ensure the metric exists
+                dct[metric_name] = create_metric_wrapper(metric_name)
         return super().__new__(mcs, name, bases, dct)
 
+def create_metric_wrapper(metric_name):
+    """Factory function to create a metric wrapper for the given metric name."""
+    metric_function = getattr(skm, metric_name, None)
+    if metric_function is None:
+        raise ValueError(f"Metric '{metric_name}' not found in sklearn.metrics.")
+
+    def method_wrapper(self, y_true, y_pred, **kwargs):
+        """Wrapper function for the metric."""
+        return metric_function(y_true, y_pred, **kwargs)
+    
+    method_wrapper.__name__ = metric_name  # Set the method name for clarity
+    method_wrapper.__doc__ = metric_function.__doc__  # Use the original docstring
+    return method_wrapper
 
 class BaseClassificationPerformanceMetrics:
     """Base class for classification performance metrics."""

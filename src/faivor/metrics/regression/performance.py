@@ -23,15 +23,25 @@ class RegressionPerformanceMetricsMeta(type):
     ]
 
     def __new__(mcs, name, bases, dct):
-        """Creates a new class, inheriting from skm metrics."""
+        """Creates a new class, inheriting from sklearn.metrics."""
         for metric_name in mcs._WHITELISTED_METRICS:
-            metric_function = getattr(skm, metric_name, None)
-            if metric_function:
-                def method_wrapper(self, y_true, y_pred, **kwargs):
-                    return metric_function(y_true, y_pred, **kwargs)
-                dct[metric_name] = method_wrapper
+            if hasattr(skm, metric_name):  # Ensure the metric exists
+                dct[metric_name] = create_metric_wrapper(metric_name)
         return super().__new__(mcs, name, bases, dct)
 
+def create_metric_wrapper(metric_name):
+    """Factory function to create a metric wrapper for the given metric name."""
+    metric_function = getattr(skm, metric_name, None)
+    if metric_function is None:
+        raise ValueError(f"Metric '{metric_name}' not found in sklearn.metrics.")
+
+    def method_wrapper(self, y_true, y_pred, **kwargs):
+        """Wrapper function for the metric."""
+        return metric_function(y_true, y_pred, **kwargs)
+    
+    method_wrapper.__name__ = metric_name  # Set the method name for clarity
+    method_wrapper.__doc__ = metric_function.__doc__  # Use the original docstring
+    return method_wrapper
 
 class BaseRegressionPerformanceMetrics:
     """Base class for regression performance metrics."""

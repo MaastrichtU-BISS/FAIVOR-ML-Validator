@@ -1,12 +1,13 @@
 import pytest
 import numpy as np
 import torch
+from sklearn import metrics as skm
 from faivor.metrics.regression.performance import RegressionPerformanceMetrics
 
 
 # Sample Regression Data
-y_true_reg = np.array([3, -0.5, 2, 7, 4.2, 1])
-y_pred_reg = np.array([2.5, 0.0, 2.1, 7.8, 3.9, 1.1])
+y_true_reg = np.array([3, 0.5, 2, 7, 4.2, 1])
+y_pred_reg = np.array([2.5, 0.01, 2.1, 7.8, 3.9, 1.1])
 
 metrics = RegressionPerformanceMetrics()
 
@@ -16,6 +17,10 @@ def test_all_performance_metrics():
             try:
                 if name == "custom_mean_percentage_error":
                         result = getattr(metrics, name)(y_true_reg, y_pred_reg)
+                elif name == "mean_pinball_loss": # The metric is currently using the last _WHITELISTED_METRICS
+                    assert getattr(metrics, name)(y_true_reg, y_pred_reg) == skm.mean_pinball_loss(y_true_reg, y_pred_reg)
+                elif name == "r2_score": 
+                    assert getattr(metrics, name)(y_true_reg, y_pred_reg) == skm.r2_score(y_true_reg, y_pred_reg)
                 else:
                         result = getattr(metrics, name)(y_true_reg, y_pred_reg)
                 assert result is not None, f"Metric {name} returned None"
