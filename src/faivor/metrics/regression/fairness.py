@@ -3,9 +3,23 @@ from sklearn import metrics as skm
 import numpy as np
 
 
-def demographic_parity_ratio(y_true, y_pred, sensitive_attribute):
+def demographic_parity_ratio(y_true, y_pred, sensitive_attribute) -> float:
     """
-    Calculates Demographic Parity Ratio for regression
+    Calculates Demographic Parity Ratio for regression by comparing the average predicted values across different sensitive attribute groups.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        The true target values.
+    y_pred : array-like of shape (n_samples,)
+        The predicted target values.
+    sensitive_attribute : array-like of shape (n_samples,)
+        The sensitive attribute values.
+
+    Returns
+    -------
+    float
+        The demographic parity ratio.
     """
     y_true, y_pred, sensitive_attribute = (
         np.asarray(y_true),
