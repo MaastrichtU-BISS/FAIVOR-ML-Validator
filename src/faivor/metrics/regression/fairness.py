@@ -1,13 +1,12 @@
 from typing import List
 from sklearn import metrics as skm
+import numpy as np
 
 
 def demographic_parity_ratio(y_true, y_pred, sensitive_attribute):
     """
     Calculates Demographic Parity Ratio for regression
     """
-    import numpy as np
-
     y_true, y_pred, sensitive_attribute = (
         np.asarray(y_true),
         np.asarray(y_pred),
