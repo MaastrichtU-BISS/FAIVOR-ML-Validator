@@ -1,5 +1,3 @@
-from typing import List
-from sklearn import metrics as skm
 import numpy as np
 
 
@@ -44,3 +42,4 @@ def demographic_parity_ratio(y_true, y_pred, sensitive_attribute) -> float:
         return np.nan  # to handle nan group means
 
     return np.min(group_means) / np.max(group_means)
+

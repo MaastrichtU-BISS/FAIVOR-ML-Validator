@@ -1,74 +1,55 @@
-from typing import List
-from sklearn import metrics as skm
-from torchmetrics import Accuracy, F1Score, Precision, Recall
-import torch
-__all__ = ["ClassificationFairnessMetrics"]
+import numpy as np
 
+def disparate_impact(y_true, y_pred, sensitive_attribute, favorable_outcome=1) -> float:
+    """
+    Calculates Disparate Impact for classification.
 
-class ClassificationFairnessMetricsMeta(type):
-    """Metaclass for dynamically creating classification fairness metric classes."""
+    Disparate Impact (DI) is the ratio of the rate of favorable outcomes for the
+    disadvantaged group compared to the advantaged group. A common threshold for
+    concern is DI < 0.8, indicating potential adverse impact.
 
-    _WHITELISTED_METRICS: List[str] = [
-        "accuracy_score", # useful for group fairness comparisons
-    ]
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        The true target values (binary: 0 or 1).
+    y_pred : array-like of shape (n_samples,)
+        The predicted target values (binary: 0 or 1).
+    sensitive_attribute : array-like of shape (n_samples,)
+        The sensitive attribute values (categorical).
+    favorable_outcome : int or float, default=1
+        The value representing the favorable outcome in y_true and y_pred.
 
-    def __new__(mcs, name, bases, dct):
-         """Creates a new class, inheriting from skm metrics."""
-         for metric_name in mcs._WHITELISTED_METRICS:
-            metric_function = getattr(skm, metric_name, None)
-            if metric_function:
-                def method_wrapper(self, y_true, y_pred, **kwargs):
-                    return metric_function(y_true, y_pred, **kwargs)
-                dct[metric_name] = method_wrapper
-         
-         for metric_name in ["accuracy", "f1_score", "precision", "recall"]:
-            if metric_name == "accuracy":
-                metric_class = Accuracy
-            elif metric_name == "f1_score":
-                metric_class = F1Score
-            elif metric_name == "precision":
-                metric_class = Precision
-            elif metric_name == "recall":
-                metric_class = Recall
+    Returns
+    -------
+    float
+        The disparate impact ratio. Returns np.nan if there's only one group or
+        if the advantaged group has no favorable outcomes.
+    """
+    y_true, y_pred, sensitive_attribute = (
+        np.asarray(y_true),
+        np.asarray(y_pred),
+        np.asarray(sensitive_attribute),
+    )
 
-            def torchmetrics_method_wrapper(self, y_true, y_pred, **kwargs):
-                    metric = metric_class(task = "binary", **kwargs)
-                    return metric(
-                        torch.tensor(y_pred, dtype = torch.float32),
-                        torch.tensor(y_true, dtype= torch.int),
-                    ).detach().cpu().item()
-            dct[metric_name] = torchmetrics_method_wrapper
-         return super().__new__(mcs, name, bases, dct)
+    unique_sensitive_values = np.unique(sensitive_attribute)
+    if len(unique_sensitive_values) < 2:
+        return np.nan  # Not applicable for less than 2 groups
 
+    favorable_rates = {}
+    for value in unique_sensitive_values:
+        group_mask = sensitive_attribute == value
+        group_size = group_mask.sum()
+        if group_size == 0:
+            favorable_rates[value] = 0 # Handle empty groups to avoid division by zero later, assume 0 favorable rate
+        else:
+            favorable_outcomes_count = np.sum(y_pred[group_mask] == favorable_outcome)
+            favorable_rates[value] = favorable_outcomes_count / group_size
 
-class BaseClassificationFairnessMetrics:
-    """Base class for classification fairness metrics."""
-    pass
+    rates = np.array(list(favorable_rates.values()))
+    min_rate = np.min(rates)
+    max_rate = np.max(rates)
 
+    if max_rate == 0: # avoid division by zero if advantaged group has no favorable outcomes
+        return np.nan
 
-class ClassificationFairnessMetrics(BaseClassificationFairnessMetrics, metaclass=ClassificationFairnessMetricsMeta):
-    """Class for classification fairness metrics."""
-
-    def custom_disparate_impact(self, y_true, y_pred, sensitive_attribute):
-        """Calculates Disparate Impact for classification."""
-        import numpy as np
-        y_true, y_pred, sensitive_attribute = np.asarray(y_true), np.asarray(y_pred), np.asarray(sensitive_attribute)
-
-        unique_sensitive_values = np.unique(sensitive_attribute)
-        if len(unique_sensitive_values) < 2:
-            return np.nan
-
-        group_positive_rates = []
-        for value in unique_sensitive_values:
-            group_mask = sensitive_attribute == value
-            if group_mask.sum() == 0:
-                group_positive_rates.append(np.nan)
-            else:
-                 group_positive_rates.append(np.mean(y_pred[group_mask] == np.max(y_pred)))  # Assuming 1 is the positive class
-
-        group_positive_rates = np.asarray(group_positive_rates)
-        if np.isnan(group_positive_rates).any():
-             return np.nan
-
-        return np.min(group_positive_rates) / np.max(group_positive_rates)
-
+    return min_rate / max_rate

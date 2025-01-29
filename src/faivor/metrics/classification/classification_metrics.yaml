@@ -1,0 +1,100 @@
+performance:
+  - function_name: accuracy_score
+    regular_name: Accuracy Score
+    description: Accuracy classification score.
+    func: sklearn.metrics.accuracy_score
+    is_torch: false
+  - function_name: balanced_accuracy_score
+    regular_name: Balanced Accuracy Score
+    description: Balanced accuracy classification score.
+    func: sklearn.metrics.balanced_accuracy_score
+    is_torch: false
+  - function_name: average_precision_score
+    regular_name: Average Precision Score
+    description: Compute average precision (AP) from prediction scores.
+    func: sklearn.metrics.average_precision_score
+    is_torch: false
+  - function_name: f1_score
+    regular_name: F1 Score
+    description: F1 score, harmonic mean of precision and recall.
+    func: sklearn.metrics.f1_score
+    is_torch: false
+  - function_name: precision_score
+    regular_name: Precision Score
+    description: Precision classification score.
+    func: sklearn.metrics.precision_score
+    is_torch: false
+  - function_name: recall_score
+    regular_name: Recall Score
+    description: Recall classification score.
+    func: sklearn.metrics.recall_score
+    is_torch: false
+  - function_name: roc_auc_score
+    regular_name: ROC AUC Score
+    description: Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC) from prediction scores.
+    func: sklearn.metrics.roc_auc_score
+    is_torch: false
+  - function_name: jaccard_score
+    regular_name: Jaccard Score
+    description: Jaccard similarity coefficient.
+    func: sklearn.metrics.jaccard_score
+    is_torch: false
+  - function_name: log_loss
+    regular_name: Log Loss
+    description: Log loss, aka logistic regression loss or cross-entropy loss.
+    func: sklearn.metrics.log_loss
+    is_torch: false
+  - function_name: matthews_corrcoef
+    regular_name: Matthews Correlation Coefficient
+    description: Compute the Matthews correlation coefficient (MCC).
+    func: sklearn.metrics.matthews_corrcoef
+    is_torch: false
+  - function_name: brier_score_loss
+    regular_name: Brier Score Loss
+    description: Compute the Brier score loss.
+    func: sklearn.metrics.brier_score_loss
+    is_torch: false
+  - function_name: top_k_accuracy_score
+    regular_name: Top K Accuracy Score
+    description: Top-k accuracy classification score.
+    func: sklearn.metrics.top_k_accuracy_score
+    is_torch: false
+  - function_name: roc_curve
+    regular_name: ROC Curve
+    description: Compute Receiver operating characteristic (ROC) curve.
+    func: sklearn.metrics.roc_curve
+    is_torch: false
+  - function_name: precision_recall_curve
+    regular_name: Precision Recall Curve
+    description: Compute precision-recall pairs for different probability thresholds.
+    func: sklearn.metrics.precision_recall_curve
+    is_torch: false
+  - function_name: hamming_loss
+    regular_name: Hamming Loss
+    description: Compute the average Hamming loss or Hamming distance between two sets of samples.
+    func: sklearn.metrics.hamming_loss
+    is_torch: false
+  - function_name: zero_one_loss
+    regular_name: Zero One Loss
+    description: Zero-one classification loss.
+    func: sklearn.metrics.zero_one_loss
+    is_torch: false
+  - function_name: confusion_matrix
+    regular_name: Confusion Matrix
+    description: Compute confusion matrix to evaluate the accuracy of a classification.
+    func: sklearn.metrics.confusion_matrix
+    is_torch: false
+
+fairness:
+  - function_name: disparate_impact
+    regular_name: Disparate Impact
+    description: Calculates the disparate impact for classification by comparing the rate of favorable outcomes for different groups.
+    func: faivor.metrics.classification.fairness.disparate_impact
+    is_torch: false
+
+explainability:
+  - function_name: prediction_entropy
+    regular_name: Prediction Entropy
+    description: Calculates the entropy of predictions to measure model uncertainty.
+    func: faivor.metrics.classification.explainability.prediction_entropy
+    is_torch: false

@@ -1,24 +1,21 @@
 import pytest
 import numpy as np
-import torch
-from faivor.metrics.regression.explainability import RegressionExplainabilityMetrics
 
-# Sample Regression Data
-feature_importances_reg = np.array([0.1, 0.2, 0.7, 0.05, 0.05])
-y_true_reg = np.array([3, -0.5, 2, 7])
-y_pred_reg = np.array([2.5, 0.0, 2.1, 7.8])
-metrics = RegressionExplainabilityMetrics()
+from faivor.metrics.regression.explainability import feature_importance_ratio
 
+def test_feature_importance_ratio():
+    feature_importances = np.array([0.1, 0.2, 0.5, 0.2])
+    result = feature_importance_ratio(feature_importances)
+    assert result is not None, "Feature importance ratio returned None"
 
-def test_all_explainability_metrics():
-    for name in dir(metrics):
-        if not name.startswith("_") and callable(getattr(metrics, name)):
-            try:
-                    if name == "custom_feature_importance_ratio":
-                        result = getattr(metrics, name)(feature_importances_reg)
-                    else:
-                        result = getattr(metrics, name)(y_true_reg, y_pred_reg)
-                    assert result is not None, f"Metric {name} returned None"
+    feature_importances_empty = np.array([])
+    result_empty = feature_importance_ratio(feature_importances_empty)
+    assert np.isnan(result_empty), "Feature importance ratio with empty array should return NaN"
 
-            except Exception as e:
-                pytest.fail(f"Metric {name} raised an exception: {e}")
+    feature_importances_single = np.array([0.5])
+    result_single = feature_importance_ratio(feature_importances_single)
+    assert result_single == 1.0, "Feature importance ratio with single value should return 1.0"
+
+    feature_importances_equal = np.array([0.3, 0.3, 0.3])
+    result_equal = feature_importance_ratio(feature_importances_equal)
+    assert result_equal == 1.0, "Feature importance ratio with equal values should return 1.0"
