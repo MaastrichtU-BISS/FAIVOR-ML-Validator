@@ -91,10 +91,30 @@ fairness:
     description: Calculates the disparate impact for classification by comparing the rate of favorable outcomes for different groups.
     func: faivor.metrics.classification.fairness.disparate_impact
     is_torch: false
+  - function_name: statistical_parity_difference
+    regular_name: Statistical Parity Difference
+    description: Calculates the statistical parity difference for classification, measuring the difference in favorable outcome rates between groups.
+    func: faivor.metrics.classification.fairness.statistical_parity_difference
+    is_torch: false
+  - function_name: equal_opportunity_difference
+    regular_name: Equal Opportunity Difference
+    description: Calculates the equal opportunity difference for classification, measuring the difference in true positive rates between groups.
+    func: faivor.metrics.classification.fairness.equal_opportunity_difference
+    is_torch: false
 
 explainability:
   - function_name: prediction_entropy
     regular_name: Prediction Entropy
     description: Calculates the entropy of predictions to measure model uncertainty.
     func: faivor.metrics.classification.explainability.prediction_entropy
+    is_torch: false
+  - function_name: confidence_score
+    regular_name: Confidence Score
+    description: Calculates the average confidence score of predictions for classification.
+    func: faivor.metrics.classification.explainability.confidence_score
+    is_torch: false
+  - function_name: margin_of_confidence
+    regular_name: Margin of Confidence
+    description: Calculates the average margin of confidence for binary classification predictions.
+    func: faivor.metrics.classification.explainability.margin_of_confidence
     is_torch: false
