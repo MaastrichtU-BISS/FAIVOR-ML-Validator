@@ -1,16 +1,18 @@
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Dict
+from abc import ABC, abstractmethod
 import torch
 
 @dataclass
-class ModelMetric:
+class ModelMetric(ABC):
     function_name: str
     regular_name: str
     description: str
     func: Callable
     is_torch: bool = False
     torch_kwargs: Dict = field(default_factory=dict)
-
+    
+    @abstractmethod
     def compute(self, y_true, y_pred, **kwargs) -> float:
         """Compute the metric based on whether it's a Torch or Sklearn function."""
         if self.is_torch:
