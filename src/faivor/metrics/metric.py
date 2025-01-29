@@ -1,30 +1,18 @@
-from sklearn import metrics as skm
-from typing import Callable, List, Optional
-import numpy as np
+from dataclasses import dataclass, field
+from typing import Callable, Optional, Dict
 import torch
-from torchmetrics import MeanAbsoluteError, MeanSquaredError, MeanAbsolutePercentageError
 
-
+@dataclass
 class ModelMetric:
-    """Class to encapsulate any metric."""
-    def __init__(
-        self,
-        function_name: str,
-        regular_name: str,
-        description: str,
-        func: Callable,
-        is_torch: bool = False,  
-        torch_kwargs: Optional[dict] = None,
-    ):
-        self.function_name = function_name # Name of the function
-        self.regular_name = regular_name  # Human-readable name
-        self.description = description  # Description of the metric
-        self.func = func  # Actual function
-        self.is_torch = is_torch  # Flag to check if the metric uses torch
-        self.torch_kwargs = torch_kwargs or {}
+    function_name: str
+    regular_name: str
+    description: str
+    func: Callable
+    is_torch: bool = False
+    torch_kwargs: Dict = field(default_factory=dict)
 
-    def compute(self, y_true, y_pred, **kwargs):
-        """Compute the metric."""
+    def compute(self, y_true, y_pred, **kwargs) -> float:
+        """Compute the metric based on whether it's a Torch or Sklearn function."""
         if self.is_torch:
             metric = self.func(**self.torch_kwargs)
             return metric(
