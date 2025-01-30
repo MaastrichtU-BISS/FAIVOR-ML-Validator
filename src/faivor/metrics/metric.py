@@ -1,10 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Callable, Dict
-from abc import ABC
 import torch
 
 @dataclass
-class ModelMetric(ABC):
+class ModelMetric():
     function_name: str
     regular_name: str
     description: str
