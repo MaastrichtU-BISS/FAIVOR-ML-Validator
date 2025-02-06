@@ -1,0 +1,75 @@
+performance:
+  - function_name: mean_absolute_error
+    regular_name: Mean Absolute Error
+    description: The mean of the absolute errors between true and predicted values.
+    func: sklearn.metrics.mean_absolute_error
+    is_torch: false
+  - function_name: mean_squared_error
+    regular_name: Mean Squared Error
+    description: The mean of the squared errors between true and predicted values.
+    func: sklearn.metrics.mean_squared_error
+    is_torch: false
+  - function_name: mean_squared_log_error
+    regular_name: Mean Squared Logarithmic Error
+    description: Regression loss using the log of true and predicted values.
+    func: sklearn.metrics.mean_squared_log_error
+    is_torch: false
+  - function_name: median_absolute_error
+    regular_name: Median Absolute Error
+    description: The median of the absolute errors between true and predicted values.
+    func: sklearn.metrics.median_absolute_error
+    is_torch: false
+  - function_name: r2_score
+    regular_name: R² Score
+    description: The coefficient of determination regression score.
+    func: sklearn.metrics.r2_score
+    is_torch: false
+  - function_name: explained_variance_score
+    regular_name: Explained Variance Score
+    description: Measures the proportion of variance explained by the model.
+    func: sklearn.metrics.explained_variance_score
+    is_torch: false
+  - function_name: max_error
+    regular_name: Max Error
+    description: The maximum absolute difference between true and predicted values.
+    func: sklearn.metrics.max_error
+    is_torch: false
+  - function_name: mean_poisson_deviance
+    regular_name: Mean Poisson Deviance
+    description: Mean Poisson deviance regression loss.
+    func: sklearn.metrics.mean_poisson_deviance
+    is_torch: false
+  - function_name: mean_gamma_deviance
+    regular_name: Mean Gamma Deviance
+    description: Mean gamma deviance regression loss.
+    func: sklearn.metrics.mean_gamma_deviance
+    is_torch: false
+  - function_name: d2_absolute_error_score
+    regular_name: D² Absolute Error Score
+    description: The proportion of variance explained using absolute errors.
+    func: sklearn.metrics.d2_absolute_error_score
+    is_torch: false
+  - function_name: mean_pinball_loss
+    regular_name: Mean Pinball Loss
+    description: The mean pinball loss for quantile regression.
+    func: sklearn.metrics.mean_pinball_loss
+    is_torch: false
+  - function_name: mean_percentage_error
+    regular_name: Mean Percentage Error
+    description: Calculates the mean percentage error for regression, ignoring zero true values.
+    func: faivor.metrics.regression.performance.mean_percentage_error
+    is_torch: false
+
+fairness:
+  - function_name: demographic_parity_ratio
+    regular_name: Custom Demographic Parity Ratio
+    description: Calculates the demographic parity ratio for regression by comparing the average predicted values across different sensitive attribute groups.
+    func: faivor.metrics.regression.fairness.demographic_parity_ratio
+    is_torch: false
+
+explainability:
+  - function_name: feature_importance_ratio
+    regular_name: Feature Importance Ratio
+    description: Calculates the ratio of feature importance for regression explainability.
+    func: faivor.metrics.regression.explainability.feature_importance_ratio
+    is_torch: false
