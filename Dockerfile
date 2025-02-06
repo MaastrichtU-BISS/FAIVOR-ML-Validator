@@ -18,7 +18,7 @@ ENV PYTHONPATH=/app/src
 
 # Install the dependencies using Poetry without creating a virtual environment
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+    && poetry install --without dev --no-interaction --no-ansi
 
 # Expose the port where the FastAPI app will run
 EXPOSE 8000
