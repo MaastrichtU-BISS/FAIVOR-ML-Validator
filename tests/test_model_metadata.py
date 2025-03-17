@@ -1,5 +1,6 @@
 import json
 from faivor.model_metadata import ModelMetadata
+from faivor.parse_data import create_json_payloads
 
 
 def test_model_metadata_creation(shared_datadir):
@@ -23,3 +24,21 @@ def test_model_metadata_creation(shared_datadir):
     assert model_metadata.references[0] == "https://doi.org/10.1016/j.clnu.2019.11.033"
     assert len(model_metadata.inputs) > 0
     assert model_metadata.output == "Tube feeding of patient"
+
+
+def test_create_json_payloads(shared_datadir):
+    metadata_json = json.loads((shared_datadir / "pilot-model_2" / "metadata.json").read_text(encoding="utf-8"))
+    model_metadata = ModelMetadata(metadata_json)
+    csv_path = shared_datadir / "pilot-model_2" / "data.csv"
+    inputs, outputs = create_json_payloads(model_metadata, csv_path)
+
+    assert isinstance(inputs, list)
+    assert isinstance(outputs, list)
+    assert len(inputs) > 0
+    assert len(outputs) > 0
+
+    # Further checks can include verifying content correctness
+    first_input = inputs[0]
+    assert isinstance(first_input, dict)
+    assert model_metadata.inputs[0]["description"] in inputs[0]
+    assert model_metadata.output in outputs[0]

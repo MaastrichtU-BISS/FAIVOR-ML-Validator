@@ -1,8 +1,16 @@
+import json
 from typing import List, Dict, Any, Optional
 
 class ModelMetadata:
     def __init__(self, metadata_json: Dict[str, Any]):
-        # Initialize the class with provided metadata JSON
+        """
+        Initialize the ModelMetadata class with provided metadata JSON.
+
+        Parameters
+        ----------
+        metadata_json : Dict[str, Any]
+            A dictionary containing the parsed metadata information.
+        """
         self.metadata: Dict[str, Any] = metadata_json
         self.inputs: List[Dict[str, Any]] = self._parse_inputs()
         self.output: str = self._parse_output()
