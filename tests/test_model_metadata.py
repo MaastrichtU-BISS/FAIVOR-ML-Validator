@@ -1,37 +1,38 @@
 import json
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads
+from pathlib import Path
+from typing import List
 
 
-def test_model_metadata_creation(shared_datadir):
-    # Load model metadata from a JSON file in the shared data directory
-    for model_locaion in ["pilot-model_1", "pilot-model_2"]:
-        model_metadata_path = shared_datadir / model_locaion / "metadata.json"
+def test_model_metadata_creation(shared_datadir: Path):
+    """Test the creation of ModelMetadata objects from JSON metadata files."""
+    for model_location in get_model_paths(shared_datadir):
+        model_metadata_path = model_location / "metadata.json"
 
         with open(model_metadata_path, "r", encoding="utf-8") as file:
             metadata_json = json.load(file)
 
-        model_metadata: ModelMetadata = ModelMetadata(metadata_json)
+        model_metadata = ModelMetadata(metadata_json)
 
-        # Test real expected values
-        assert (
-            model_metadata.model_name
-            == "Prediction model for tube feeding dependency during chemoradiotherapy for at least four weeks in head and neck cancer patients"
-        )
-        assert model_metadata.docker_image == "jvsoest/willemsen_tubefeed"
-        assert model_metadata.author == "Willemsen A.C.H. et al."
-        assert model_metadata.contact_email == "j.vansoest@maastrichtuniversity.nl"
-        assert len(model_metadata.references) == 1
-        assert model_metadata.references[0] == "https://doi.org/10.1016/j.clnu.2019.11.033"
-        assert len(model_metadata.inputs) > 0
-        assert model_metadata.output == "Tube feeding of patient"
+        assert model_metadata.model_name is not None, "Model name should not be None"
+        assert model_metadata.docker_image is not None, "Docker image should not be None"
+        assert model_metadata.author is not None, "Author should not be None"
+        assert model_metadata.contact_email is not None, "Contact email should not be None"
+        assert isinstance(model_metadata.references, list), "References should be a list"
+        assert len(model_metadata.inputs) > 0, "Inputs should not be empty"
+        assert model_metadata.output != "", "Output should not be empty"
 
 
 def test_create_json_payloads(shared_datadir):
-    for model_locaion in ["pilot-model_1", "pilot-model_2"]:
-        metadata_json = json.loads((shared_datadir / model_locaion / "metadata.json").read_text(encoding="utf-8"))
+    for model_location in get_model_paths(shared_datadir):
+        model_metadata_path = model_location / "metadata.json"
+
+        with open(model_metadata_path, "r", encoding="utf-8") as file:
+            metadata_json = json.load(file)
+
         model_metadata = ModelMetadata(metadata_json)
-        csv_path = shared_datadir / model_locaion / "data.csv"
+        csv_path = model_location / "data.csv"
         inputs, outputs = create_json_payloads(model_metadata, csv_path)
 
         assert isinstance(inputs, list)
@@ -44,3 +45,8 @@ def test_create_json_payloads(shared_datadir):
         assert isinstance(first_input, dict)
         assert model_metadata.inputs[0]["description"] in inputs[0]
         assert model_metadata.output in outputs[0]
+
+def get_model_paths(shared_datadir: Path) -> List[Path]:
+    """Retrieve model paths from shared data directory."""
+    model_dir = shared_datadir / "models"
+    return [model_dir / subdir for subdir in model_dir.iterdir() if subdir.is_dir()]

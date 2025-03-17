@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict, Any, Optional
 
+
 class ModelMetadata:
     def __init__(self, metadata_json: Dict[str, Any]):
         """
@@ -14,31 +15,33 @@ class ModelMetadata:
         self.metadata: Dict[str, Any] = metadata_json
         self.inputs: List[Dict[str, Any]] = self._parse_inputs()
         self.output: str = self._parse_output()
-        self.docker_image: Optional[str] = self.metadata["General Model Information"].get("FAIRmodels image name", {}).get("@value")
-        self.model_name: Optional[str] = self.metadata["General Model Information"].get("Title", {}).get("@value")
-        self.description: Optional[str] = self.metadata["General Model Information"].get("Editor Note", {}).get("@value")
-        self.author: Optional[str] = self.metadata["General Model Information"].get("Created by", {}).get("@value")
-        self.references: List[str] = [ref.get("@value") for ref in self.metadata["General Model Information"].get("References to papers", []) if ref.get("@value")]
-        self.contact_email: Optional[str] = self.metadata["General Model Information"].get("Contact email", {}).get("@value")
+        general_info = self.metadata.get("General Model Information", {})
+        self.docker_image: Optional[str] = general_info.get("FAIRmodels image name", {}).get("@value")
+        self.model_name: Optional[str] = general_info.get("Title", {}).get("@value")
+        self.description: Optional[str] = general_info.get("Editor Note", {}).get("@value")
+        self.author: Optional[str] = general_info.get("Created by", {}).get("@value")
+        self.references: List[str] = [ref.get("@value") for ref in general_info.get("References to papers", []) if ref.get("@value")]
+        self.contact_email: Optional[str] = general_info.get("Contact email", {}).get("@value")
 
     def _parse_inputs(self) -> List[Dict[str, str]]:
-        # Extract input features details from metadata
+        """Extract input feature details from metadata."""
         inputs: List[Dict[str, str]] = []
-        for input_feature in self.metadata["Input data"]:
+        for input_feature in self.metadata.get("Input data", []):
+            feature_label = input_feature.get("Input feature", {}).get("rdfs:label", "")
             feature = {
-                "description": input_feature["Description"]["@value"],
-                "type": input_feature["Type of input"]["@value"],
-                "feature_label": input_feature["Input feature"]["rdfs:label"]
+                "description": input_feature.get("Description", {}).get("@value", ""),
+                "type": input_feature.get("Type of input", {}).get("@value", ""),
+                "feature_label": feature_label
             }
             inputs.append(feature)
         return inputs
 
     def _parse_output(self) -> str:
-        # Extract the output column label from metadata
-        return self.metadata["Outcome"]["rdfs:label"]
+        """Extract the output column label from metadata."""
+        return self.metadata.get("Outcome", {}).get("rdfs:label", "")
 
     def __repr__(self) -> str:
-        # Provide a JSON-formatted string representation of the metadata
+        """Provide a JSON-formatted string representation of the metadata."""
         return json.dumps({
             "model_name": self.model_name,
             "description": self.description,
@@ -49,4 +52,3 @@ class ModelMetadata:
             "references": self.references,
             "contact_email": self.contact_email
         }, indent=2)
-
