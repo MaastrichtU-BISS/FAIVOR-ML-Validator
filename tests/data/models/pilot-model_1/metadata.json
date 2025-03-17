@@ -193,7 +193,7 @@
   },
   "Outcome": {
     "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C123603",
-    "rdfs:label": "Pathologic Complete Response"
+    "rdfs:label": "pCR"
   },
   "Applicability criteria": [
     {
