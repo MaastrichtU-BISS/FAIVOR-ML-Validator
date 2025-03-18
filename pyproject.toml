@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "FAIVOR"
 version = "0.1.0"
-description = "FAIRmodels-validator"
+description = "FAIRmodels validator"
 authors = []
 license = "Apache-2.0"
 readme = "README.md"
 packages = [
     { include = "faivor", from = "src" }]
-homepage = "https://github.com/MaastrichtU-BISS/FAIRmodels-validator"
-repository = "https://github.com/MaastrichtU-BISS/FAIRmodels-validator"
-documentation = "https://github.com/MaastrichtU-BISS/FAIRmodels-validator"
+homepage = "https://github.com/MaastrichtU-BISS/FAIVOR-ML-Validator"
+repository = "https://github.com/MaastrichtU-BISS/FAIVOR-ML-Validator"
+documentation = "https://github.com/MaastrichtU-BISS/FAIVOR-ML-Validator"
 keywords = []
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -34,6 +34,7 @@ torch = "^2.5.1"
 torchvision = "^0.20.1"
 torchaudio = "^2.5.1"
 docker = "^7.1.0"
+ipykernel = "^6.29.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
