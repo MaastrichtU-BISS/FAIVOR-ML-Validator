@@ -19,4 +19,4 @@ def test_model_execution(shared_datadir):
 
 
     assert prediction is not None, "Model execution should return a prediction."
-    assert isinstance(prediction, dict), "Prediction result should be a dictionary."
+    assert isinstance(prediction, list), "Prediction result should be a dictionary."
