@@ -11,9 +11,8 @@ def test_model_execution(shared_datadir):
 
     csv_path = model_dir / "pilot-model_1" / "data.csv"
     inputs, _ = create_json_payloads(model_metadata, csv_path)
-
     try:
-        prediction = execute_model(model_metadata, inputs[0])
+        prediction = execute_model(model_metadata, inputs)
     except Exception as e:
         raise RuntimeError(f"Model execution failed: {e}")
 
