@@ -27,11 +27,10 @@ class ModelMetadata:
         """Extract input feature details from metadata."""
         inputs: List[Dict[str, str]] = []
         for input_feature in self.metadata.get("Input data", []):
-            feature_label = input_feature.get("Input feature", {}).get("rdfs:label", "")
             feature = {
                 "description": input_feature.get("Description", {}).get("@value", ""),
                 "type": input_feature.get("Type of input", {}).get("@value", ""),
-                "feature_label": feature_label
+                "rdfs_label": input_feature.get("Input feature", {}).get("rdfs:label", "")
             }
             inputs.append(feature)
         return inputs

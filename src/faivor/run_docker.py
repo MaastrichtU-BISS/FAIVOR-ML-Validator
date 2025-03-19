@@ -1,10 +1,10 @@
+import logging
 import docker
 import requests
 import socket
 import time
 from contextlib import closing
 from typing import Dict, Any, Tuple
-
 
 # Mapping of status codes to strings
 status_map = {
@@ -15,6 +15,8 @@ status_map = {
     4: "Prediction failed"
 }
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def find_free_port() -> int:
     """
@@ -28,7 +30,6 @@ def find_free_port() -> int:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))
         return s.getsockname()[1]
-
 
 def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[docker.models.containers.Container, int]:
     """
@@ -50,12 +51,12 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
 
     try:
         client.images.pull(image_name)
-        print(f"[DEBUG] Successfully pulled image: {image_name}")
+        logging.debug("Successfully pulled image: %s", image_name)
     except Exception as exc:
-        print(f"[WARN] Could not pull image {image_name}, continuing locally: {exc}")
+        logging.warning("Could not pull image %s, continuing locally: %s", image_name, exc)
 
     host_port = find_free_port()
-    print(f"[DEBUG] Launching container on host port {host_port}...")
+    logging.debug("Launching container on host port %d...", host_port)
 
     container = client.containers.run(
         image=image_name,
@@ -66,13 +67,13 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
     time.sleep(1)
 
     container.reload()
-    print(f"[DEBUG] Container status: {container.status}")
+    logging.debug("Container status: %s", container.status)
+
     if container.status != "running":
         logs = container.logs().decode(errors="ignore")
-        print(f"[ERROR] Container not in 'running' state. Logs:\n{logs}")
+        logging.error("Container not in 'running' state. Logs:\n%s", logs)
 
     return container, host_port
-
 
 def wait_for_container(host_port: int, timeout: int = 10) -> None:
     """
@@ -94,11 +95,10 @@ def wait_for_container(host_port: int, timeout: int = 10) -> None:
     while (time.time() - start) < timeout:
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
             if sock.connect_ex(("localhost", host_port)) == 0:
-                print(f"[DEBUG] Container is responding on port {host_port}")
+                logging.debug("Container is responding on port %d", host_port)
                 return
         time.sleep(0.5)
     raise RuntimeError("Docker container did not become ready within timeout.")
-
 
 def request_prediction(base_url: str, payload: Dict[str, Any]) -> None:
     """
@@ -116,10 +116,9 @@ def request_prediction(base_url: str, payload: Dict[str, Any]) -> None:
     requests.exceptions.HTTPError
         If the response status is not successful.
     """
-    print(f"[DEBUG] Sending payload to {base_url}/predict: {payload}")
+    logging.debug("Sending payload to %s/predict: %s", base_url, payload)
     resp = requests.post(f"{base_url}/predict", json=payload)
     resp.raise_for_status()
-
 
 def get_status_code(base_url: str) -> int:
     """
@@ -134,14 +133,13 @@ def get_status_code(base_url: str) -> int:
             data = resp.json()
             code = data.get("status", -1)
             msg = data.get("message", "")
-            print(f"[DEBUG] Status code: {code}, message: {msg}")
+            logging.debug("Status code: %d, message: %s", code, msg)
             return code
         except Exception as ex:
-            print(f"[WARN] Could not parse JSON from /status: {ex}")
+            logging.warning("Could not parse JSON from /status: %s", ex)
     else:
-        print(f"[WARN] /status request failed with code {resp.status_code}.")
+        logging.warning("/status request failed with code %d.", resp.status_code)
     return -1
-
 
 def retrieve_result(base_url: str) -> list[float]:
     """
@@ -163,17 +161,12 @@ def retrieve_result(base_url: str) -> list[float]:
     resp.raise_for_status()
 
     try:
-        data = resp.json()  # Attempt to parse JSON.
+        data = resp.json()
         if isinstance(data, list):
-            # e.g. [0.2, 0.5, 0.7]
             return [float(x) for x in data]
-        else:
-            # Single numeric (e.g. 0.1234 or "0.1234")
-            return [float(data)]
+        return [float(data)]
     except Exception as ex:
         raise RuntimeError(f"Failed to parse result from /result: {ex}")
-        
-
 
 def stop_docker_container(container: docker.models.containers.Container) -> None:
     """
@@ -184,9 +177,8 @@ def stop_docker_container(container: docker.models.containers.Container) -> None
     container : docker.models.containers.Container
         The running container instance.
     """
-    print("[DEBUG] Stopping container...")
+    logging.debug("Stopping container...")
     container.stop()
-
 
 def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
     """
@@ -219,27 +211,21 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
     base_url = f"http://localhost:{port}"
 
     try:
-        # 1) Wait for container
         wait_for_container(port)
-
-        # 2) Request prediction
         request_prediction(base_url, input_payload)
 
-        # 3) Poll /status
         start_time = time.time()
         timeout = 60
         while time.time() - start_time < timeout:
             code = get_status_code(base_url)
-            if code == 3:  # 'Prediction completed'
+            if code == 3:
                 val = retrieve_result(base_url)
-                print(f"[DEBUG] Final numeric result: {val}")
+                logging.debug("Final numeric result: %s", val)
                 return val
-            elif code == 4:  # 'Prediction failed'
+            elif code == 4:
                 raise RuntimeError("Model returned a failed status.")
-
             time.sleep(1)
 
         raise RuntimeError("Timed out waiting for model to complete.")
-
     finally:
         stop_docker_container(container)
