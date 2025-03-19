@@ -188,7 +188,7 @@ def stop_docker_container(container: docker.models.containers.Container) -> None
     container.stop()
 
 
-def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> float:
+def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
     """
     Multi-step model execution:
       1) Start container.
@@ -207,8 +207,8 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> float:
 
     Returns
     -------
-    float
-        Numeric result from /result.
+    list[float]
+        Numeric prediction result(s).
 
     Raises
     ------
