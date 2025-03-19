@@ -100,7 +100,7 @@ def wait_for_container(host_port: int, timeout: int = 10) -> None:
         time.sleep(0.5)
     raise RuntimeError("Docker container did not become ready within timeout.")
 
-def request_prediction(base_url: str, payload: Dict[str, Any]) -> None:
+def request_prediction(base_url: str, payload: Dict[str, Any], timeout: int = 360) -> None:
     """
     Send a POST request to /predict with the input payload.
 
@@ -110,6 +110,8 @@ def request_prediction(base_url: str, payload: Dict[str, Any]) -> None:
         Base URL of the container, e.g., 'http://localhost:12345'
     payload : Dict[str, Any]
         JSON payload to send to /predict endpoint.
+    timeout : int, optional
+        Request timeout in seconds, by default 360.
 
     Raises
     ------
@@ -117,7 +119,7 @@ def request_prediction(base_url: str, payload: Dict[str, Any]) -> None:
         If the response status is not successful.
     """
     logging.debug("Sending payload to %s/predict: %s", base_url, payload)
-    resp = requests.post(f"{base_url}/predict", json=payload)
+    resp = requests.post(f"{base_url}/predict", json=payload, timeout=timeout)
     resp.raise_for_status()
 
 def get_status_code(base_url: str) -> int:
@@ -180,7 +182,7 @@ def stop_docker_container(container: docker.models.containers.Container) -> None
     logging.debug("Stopping container...")
     container.stop()
 
-def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
+def execute_model(metadata: Any, input_payload: Dict[str, Any], timeout = 360) -> list[float]:
     """
     Multi-step model execution:
       1) Start container.
@@ -196,6 +198,8 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
         Metadata with 'docker_image' key or attribute.
     input_payload : Dict[str, Any]
         Inputs for the model.
+    timeout : int, optional
+        Maximum time (sec) to wait for model completion, by default 360.
 
     Returns
     -------
@@ -212,10 +216,9 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
 
     try:
         wait_for_container(port)
-        request_prediction(base_url, input_payload)
+        request_prediction(base_url, input_payload, timeout)
 
         start_time = time.time()
-        timeout = 60
         while time.time() - start_time < timeout:
             code = get_status_code(base_url)
             if code == 3:
@@ -224,6 +227,8 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any]) -> list[float]:
                 return val
             elif code == 4:
                 raise RuntimeError("Model returned a failed status.")
+            elif code == 0:
+                raise RuntimeError("Model did not return a prediction.")
             time.sleep(1)
 
         raise RuntimeError("Timed out waiting for model to complete.")
