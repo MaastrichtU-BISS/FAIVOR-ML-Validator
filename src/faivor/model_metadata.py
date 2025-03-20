@@ -3,6 +3,10 @@ from typing import List, Dict, Any, Optional
 
 
 class ModelMetadata:
+    """
+    Class to store metadata information for a ML model, following FAIRmodels syntax.
+    """
+    
     def __init__(self, metadata_json: Dict[str, Any]):
         """
         Initialize the ModelMetadata class with provided metadata JSON.
