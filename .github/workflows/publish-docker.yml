@@ -42,20 +42,23 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
-
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false  # Do not push at this stage
           tags: ${{ steps.meta.outputs.tags }}
-
+          cache-from: type=gha  # Use cache from previous builds
+          cache-to: type=gha,mode=max  # Store cache for future builds
+          outputs: type=image  # Ensure only final image is used
+  
       - name: Push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha  # Use cache to avoid full rebuild
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.clone_url }}
             org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
