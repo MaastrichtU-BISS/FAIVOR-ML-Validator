@@ -51,7 +51,8 @@
     "Use cases": "https://schema.metadatacenter.org/properties/a6e4f2d0-50bc-403a-a969-568b11a5c509",
     "Additional concerns": "https://schema.metadatacenter.org/properties/4ee36e81-2af5-4128-9ec0-048349f3665c",
     "Evaluation results": "https://schema.metadatacenter.org/properties/2e3610dd-3659-4df5-bab0-7342f8418d03",
-    "Previous model tests": "https://schema.metadatacenter.org/properties/03c75354-79b0-4abb-81b9-81fede03c4e9"
+    "Previous model tests": "https://schema.metadatacenter.org/properties/03c75354-79b0-4abb-81b9-81fede03c4e9",
+    "Outcome label": "https://schema.metadatacenter.org/properties/a39ebe1a-2c26-46db-b6cc-0be37dc898ee"
   },
   "Input data": [
     {
@@ -61,10 +62,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "tLength"
+        "@value": "Tumor length in cm"
       },
       "Type of input": {
         "@value": "numerical"
@@ -74,16 +76,20 @@
         "@type": "xsd:decimal"
       },
       "Maximum - for numerical": {
-        "@value": "1000",
+        "@value": "100",
         "@type": "xsd:decimal"
       },
       "Categories": [
         {}
       ],
       "Input feature": {
-        "@id": "http://www.cancerdata.org/roo/C100074",
+        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C200479",
         "rdfs:label": "Tumor Length"
-      }
+      },
+      "Input label": {
+        "@value": "tLength"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/49fefeba-32af-4757-bb4f-59dc987035a2"
     },
     {
       "@context": {
@@ -92,10 +98,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "cT"
+        "@value": "Stages are used as integer numbers"
       },
       "Type of input": {
         "@value": "numerical"
@@ -114,7 +121,11 @@
       "Input feature": {
         "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48885",
         "rdfs:label": "Generic Primary Tumor TNM Finding"
-      }
+      },
+      "Input label": {
+        "@value": "cT"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/80a8d8d4-774e-4be5-b8dd-b04bc7d08f3c"
     },
     {
       "@context": {
@@ -123,10 +134,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "cN"
+        "@value": "Stages are used as integer numbers"
       },
       "Type of input": {
         "@value": "numerical"
@@ -142,7 +154,14 @@
       "Categories": [
         {}
       ],
-      "Input feature": {}
+      "Input feature": {
+        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48884",
+        "rdfs:label": "Generic Regional Lymph Nodes TNM Finding"
+      },
+      "Input label": {
+        "@value": "cN"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/930f2895-c5ed-4950-b854-7f434ffad5c3"
     }
   ],
   "General Model Information": {
@@ -155,7 +174,8 @@
       "Creation date": "https://schema.metadatacenter.org/properties/87af2a5e-2f89-4448-9143-369705fef329",
       "References to code": "https://schema.metadatacenter.org/properties/1eb8a612-f726-4b6a-aa8f-1ebff646774d",
       "Software License": "https://schema.metadatacenter.org/properties/cfc3fb18-f0a9-45f3-a9ac-bebae520ac12",
-      "FAIRmodels image name": "https://schema.metadatacenter.org/properties/f75e9b9c-0891-4040-849d-fdc034a35e7d"
+      "FAIRmodels image name": "https://schema.metadatacenter.org/properties/f75e9b9c-0891-4040-849d-fdc034a35e7d",
+      "Docker image details (exposed port)": "https://schema.metadatacenter.org/properties/7c3bdcc2-6c2e-48f5-b670-880ae1cf743d"
     },
     "Title": {
       "@value": "Prediction of pathologic complete response for rectal cancer patients"
@@ -175,12 +195,12 @@
       "@value": "j.vansoest@maastrichtuniversity.nl"
     },
     "Creation date": {
-      "@value": "2024-08-24",
+      "@value": "2025-03-20",
       "@type": "xsd:date"
     },
     "References to code": [
       {
-        "@value": ""
+        "@value": null
       }
     ],
     "Software License": {
@@ -188,19 +208,20 @@
       "rdfs:label": "Creative Commons"
     },
     "FAIRmodels image name": {
-      "@value": "jvsoest/stiphout_pcr_clinical:latest"
-    }
+      "@value": "ghcr.io/maastrichtu-cds/faivor_models/stiphout_pcr_clinical:latest"
+    },
+    "Docker image details (exposed port)": {
+      "@value": null
+    },
+    "@id": "https://repo.metadatacenter.org/template-element-instances/030b0572-4a3b-43c7-b5ff-1a7982e00b16"
   },
   "Outcome": {
     "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C123603",
-    "rdfs:label": "pCR"
+    "rdfs:label": "Pathologic Complete Response"
   },
   "Applicability criteria": [
     {
       "@value": "Patients diagnosed with rectal cancer"
-    },
-    {
-      "@value": "Patients (to be) treated with radiation therapy"
     }
   ],
   "Foundational model or algorithm used": {
@@ -229,7 +250,7 @@
   ],
   "Human life": [
     {
-      "@value": "Model is intended to support clinicians in deciding whether adjuvant treatment (after radiation therapy) is necessary. If a pathologic complete response is predicted, clinicians might opt for watch-and-wait (more follow-up CT/MRI scans) instead of surgery. In case of pCR it could save the patient from potential unnecessary surgery"
+      "@value": "Model is intended to support clinicians in deciding whether adjuvant treatment (after radiation therapy) is necessary. If a pathologic complete response is predicted, clinicians might opt for watch-and-wait (more follow-up CT/MRI scans) instead of surgery. In case of pCR it could save the patient from potential unnecessary surgery."
     }
   ],
   "Mitigations": [
@@ -285,11 +306,12 @@
           },
           "Additional information (if needed)": {
             "@value": null
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/8085c5fe-1e0b-4583-94e3-d20ca5457c13"
         }
       ],
       "sha256 of docker image": {
-        "@value": "vghvg"
+        "@value": null
       },
       "user/hospital": {
         "@value": null
@@ -310,12 +332,9 @@
             "The low 95% confidence interval - for numerical feature": "https://schema.metadatacenter.org/properties/0f2bc2b0-37e6-4392-aec1-41c86a61d009",
             "The high 95% confidence interval - for numerical feature": "https://schema.metadatacenter.org/properties/ea2134fc-80dc-44df-9120-1b8be9f5c089"
           },
-          "Input feature": {
-            "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C200479",
-            "rdfs:label": "Tumor Length"
-          },
+          "Input feature": {},
           "Volume": {
-            "@value": "400"
+            "@value": null
           },
           "The characteristics of dataset": {
             "@value": null
@@ -333,7 +352,8 @@
               "Category Label": {},
               "Distribution for category": {
                 "@value": null
-              }
+              },
+              "@id": "https://repo.metadatacenter.org/template-element-instances/a775da67-dccf-4389-a7e9-2ecdb50e59c7"
             }
           ],
           "The number of subject for evaluation": {
@@ -351,9 +371,11 @@
           "The high 95% confidence interval - for numerical feature": {
             "@value": null,
             "@type": "xsd:decimal"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/2daa250a-c06f-4710-b192-f50690d559e7"
         }
-      ]
+      ],
+      "@id": "https://repo.metadatacenter.org/template-element-instances/ef4293f6-97eb-47f1-9500-9ebdf1fd8c75"
     }
   ],
   "Previous model tests": [
@@ -383,32 +405,68 @@
             "@type": "xsd:decimal"
           },
           "Measured metric (low 95% confidence interval)": {
-            "@value": "0.607",
+            "@value": "0.608",
             "@type": "xsd:decimal"
           },
           "Measured metric (up 95% confidence interval)": {
             "@value": "0.612"
           },
           "Acceptance level": {
+            "@value": null,
+            "@type": "xsd:decimal"
+          },
+          "Additional information (if needed)": {
+            "@value": "calculated on the training dataset"
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/f8082b00-0ec4-40aa-b604-94469c10a641"
+        },
+        {
+          "@context": {
+            "Metric Label": "https://schema.metadatacenter.org/properties/f247f273-151f-4c1d-bd69-8ed6a728ed33",
+            "Measured metric (mean value)": "https://schema.metadatacenter.org/properties/e6a0cec6-e37d-431c-8480-e3eba2f0d071",
+            "Measured metric (low 95% confidence interval)": "https://schema.metadatacenter.org/properties/d93c93b8-f1ce-4d2b-b78d-1b0f2d0c1ef2",
+            "Measured metric (up 95% confidence interval)": "https://schema.metadatacenter.org/properties/5aa71926-22e4-4628-b563-5c116fd8f67e",
+            "Acceptance level": "https://schema.metadatacenter.org/properties/668d9bbc-ae81-4af0-a11e-7a401c409f98",
+            "Additional information (if needed)": "https://schema.metadatacenter.org/properties/cbcf4b91-fcb5-4462-8eae-77cba960c0e0"
+          },
+          "Metric Label": {
+            "@id": "http://purl.obolibrary.org/obo/STATO_0000608",
+            "rdfs:label": "area under the receiver operator characteristic curve"
+          },
+          "Measured metric (mean value)": {
+            "@value": "0.69",
+            "@type": "xsd:decimal"
+          },
+          "Measured metric (low 95% confidence interval)": {
+            "@value": "0.676",
+            "@type": "xsd:decimal"
+          },
+          "Measured metric (up 95% confidence interval)": {
+            "@value": "0.704"
+          },
+          "Acceptance level": {
             "@value": "null",
             "@type": "xsd:decimal"
           },
           "Additional information (if needed)": {
-            "@value": null
-          }
+            "@value": "calculated on the external dataset"
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/cb5bb5a2-1535-4847-97b1-b54040c75426"
         }
       ],
-      "Link to dataset": {
-        "@id": "https://cancerdata.org/id/10.5072/candat.2015.02"
-      },
+      "Link to dataset": {},
       "Link to reference paper": {
         "@id": "https://doi.org/10.1016/j.radonc.2010.12.002"
       },
       "Notes": {
         "@value": null
-      }
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/a7c00ec0-fff1-40fd-a843-5e7ec9106c19"
     }
   ],
+  "Outcome label": {
+    "@value": "pCR"
+  },
   "21c6f103-2897-46e4-9800-d6756aec8fea": {},
   "eb387f72-1d95-42fd-a368-dc157fd6d8bc": {},
   "8a5c5fda-0607-4cbf-8941-a8be9d05a83b": {},
@@ -416,7 +474,12 @@
   "9128f569-aca5-487d-93d6-3a99ad2073a1": {},
   "1bb43806-9e82-4e65-86f9-cebb4e7f3b38": {},
   "b4db2a96-c081-453b-b09c-caf7516d147d": {},
-  "schema:isBasedOn": "https://repo.metadatacenter.org/templates/b73f7c2c-b8fa-4b8c-b9e8-258a24bb1df7",
-  "schema:name": "Model Card metadata",
-  "schema:description": "The update template for FAIVOR project"
+  "schema:isBasedOn": "https://repo.metadatacenter.org/templates/7e9dc57b-88b5-45e6-bb8a-5a5533ef092b",
+  "schema:name": "Prediction pCR (clinical)",
+  "schema:description": "The update template for FAIVOR project",
+  "pav:createdOn": "2025-03-25T05:33:21-07:00",
+  "pav:createdBy": "https://metadatacenter.org/users/be4fcc5f-a1b1-44f3-8d39-c3df59c9196e",
+  "pav:lastUpdatedOn": "2025-03-25T05:46:43-07:00",
+  "oslc:modifiedBy": "https://metadatacenter.org/users/be4fcc5f-a1b1-44f3-8d39-c3df59c9196e",
+  "@id": "https://repo.metadatacenter.org/template-instances/29abda9f-6d5a-41db-a91c-799d87e357be"
 }

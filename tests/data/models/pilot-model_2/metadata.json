@@ -51,7 +51,8 @@
     "Use cases": "https://schema.metadatacenter.org/properties/a6e4f2d0-50bc-403a-a969-568b11a5c509",
     "Additional concerns": "https://schema.metadatacenter.org/properties/4ee36e81-2af5-4128-9ec0-048349f3665c",
     "Evaluation results": "https://schema.metadatacenter.org/properties/2e3610dd-3659-4df5-bab0-7342f8418d03",
-    "Previous model tests": "https://schema.metadatacenter.org/properties/03c75354-79b0-4abb-81b9-81fede03c4e9"
+    "Previous model tests": "https://schema.metadatacenter.org/properties/03c75354-79b0-4abb-81b9-81fede03c4e9",
+    "Outcome label": "https://schema.metadatacenter.org/properties/a39ebe1a-2c26-46db-b6cc-0be37dc898ee"
   },
   "Input data": [
     {
@@ -61,10 +62,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "BMI"
+        "@value": null
       },
       "Type of input": {
         "@value": "numerical"
@@ -83,7 +85,11 @@
       "Input feature": {
         "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C16358",
         "rdfs:label": "Body Mass Index"
-      }
+      },
+      "Input label": {
+        "@value": "BMI"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/00c7132d-5997-4b21-8e63-bfb77ebc3311"
     },
     {
       "@context": {
@@ -92,10 +98,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "WeightLoss"
+        "@value": ""
       },
       "Type of input": {
         "@value": "numerical"
@@ -114,7 +121,11 @@
       "Input feature": {
         "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/365921005",
         "rdfs:label": "Weight change finding"
-      }
+      },
+      "Input label": {
+        "@value": "WeightLoss"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/927bd921-7321-4519-9764-1209011294f7"
     },
     {
       "@context": {
@@ -123,10 +134,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "TF"
+        "@value": null
       },
       "Type of input": {
         "@value": "categorical"
@@ -146,12 +158,13 @@
             "Identification for category used in model": "https://schema.metadatacenter.org/properties/0ff233ed-291e-40d4-96b1-ef71bd5d5871"
           },
           "Category Label": {
-            "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C49488",
+            "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373066001",
             "rdfs:label": "Yes"
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/cda443b9-78ad-4534-beec-19ca6f381a44"
         },
         {
           "@context": {
@@ -159,18 +172,23 @@
             "Identification for category used in model": "https://schema.metadatacenter.org/properties/0ff233ed-291e-40d4-96b1-ef71bd5d5871"
           },
           "Category Label": {
-            "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373067005",
+            "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C49487",
             "rdfs:label": "No"
           },
           "Identification for category used in model": {
             "@value": "0"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/3269178b-d92e-4f20-b2a8-1f462d7da81f"
         }
       ],
       "Input feature": {
         "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/435801000124108",
         "rdfs:label": "Texture modified diet"
-      }
+      },
+      "Input label": {
+        "@value": "TF"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/b647502b-cd07-41d8-af82-67330177c252"
     },
     {
       "@context": {
@@ -179,10 +197,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "PS"
+        "@value": null
       },
       "Type of input": {
         "@value": "categorical"
@@ -207,7 +226,8 @@
           },
           "Identification for category used in model": {
             "@value": "0"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/65be78a9-914d-4e72-985c-86e010b1b91f"
         },
         {
           "@context": {
@@ -220,43 +240,60 @@
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/e8ce7587-b931-41bc-9f9c-57755e665a3a"
         },
         {
           "@context": {
             "Category Label": "https://schema.metadatacenter.org/properties/e6cf70d0-7e05-4122-b318-b4d93ee63c86",
             "Identification for category used in model": "https://schema.metadatacenter.org/properties/0ff233ed-291e-40d4-96b1-ef71bd5d5871"
           },
-          "Category Label": {},
+          "Category Label": {
+            "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373805004",
+            "rdfs:label": "WHO performance status grade 2"
+          },
           "Identification for category used in model": {
             "@value": "2"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/d43b7e97-3b28-40af-b08a-0bc0b3cf6268"
         },
         {
           "@context": {
             "Category Label": "https://schema.metadatacenter.org/properties/e6cf70d0-7e05-4122-b318-b4d93ee63c86",
             "Identification for category used in model": "https://schema.metadatacenter.org/properties/0ff233ed-291e-40d4-96b1-ef71bd5d5871"
           },
-          "Category Label": {},
+          "Category Label": {
+            "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373806003",
+            "rdfs:label": "WHO performance status grade 3"
+          },
           "Identification for category used in model": {
             "@value": "3"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/38dad0e8-baf3-41e5-83d8-2a0bcf02735b"
         },
         {
           "@context": {
             "Category Label": "https://schema.metadatacenter.org/properties/e6cf70d0-7e05-4122-b318-b4d93ee63c86",
             "Identification for category used in model": "https://schema.metadatacenter.org/properties/0ff233ed-291e-40d4-96b1-ef71bd5d5871"
           },
-          "Category Label": {},
+          "Category Label": {
+            "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373807007",
+            "rdfs:label": "WHO performance status grade 4"
+          },
           "Identification for category used in model": {
             "@value": "4"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/545335b5-0225-4549-9adb-2776b8d46dec"
         }
       ],
       "Input feature": {
         "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/373802001",
         "rdfs:label": "WHO performance status finding"
-      }
+      },
+      "Input label": {
+        "@value": "PS"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/664318a7-748d-4ed1-a7be-dd36d8a0e50e"
     },
     {
       "@context": {
@@ -265,10 +302,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "Tumorlocation"
+        "@value": "Tumor location. Categories 1-6 were selected from ontologies. Category 7 - other tumor location for head neck cancer."
       },
       "Type of input": {
         "@value": "categorical"
@@ -293,7 +331,8 @@
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/d08f47b2-e97b-4ad2-9cbe-1e5a04d2bfb1"
         },
         {
           "@context": {
@@ -306,7 +345,8 @@
           },
           "Identification for category used in model": {
             "@value": "2"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/7e64603b-85bc-4f24-be27-992c0eece440"
         },
         {
           "@context": {
@@ -319,7 +359,8 @@
           },
           "Identification for category used in model": {
             "@value": "3"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/ee5f8047-0bec-4e5d-a70b-476337725030"
         },
         {
           "@context": {
@@ -332,7 +373,8 @@
           },
           "Identification for category used in model": {
             "@value": "4"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/efccbb89-6411-41a7-be19-ea053765544a"
         },
         {
           "@context": {
@@ -345,7 +387,8 @@
           },
           "Identification for category used in model": {
             "@value": "5"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/cb3fd02d-7349-492c-93ff-35f412102a7f"
         },
         {
           "@context": {
@@ -358,7 +401,8 @@
           },
           "Identification for category used in model": {
             "@value": "6"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/c53b8e22-6bda-4c8e-85fa-65a7e05a3924"
         },
         {
           "@context": {
@@ -371,13 +415,18 @@
           },
           "Identification for category used in model": {
             "@value": "7"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/6a6d36c3-ce29-4fc9-90c1-c37e514c68aa"
         }
       ],
       "Input feature": {
         "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/406122000",
         "rdfs:label": "Head finding"
-      }
+      },
+      "Input label": {
+        "@value": "Tumorlocation"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/f9be3f0a-2ba2-4f55-b92a-ec853424e4ff"
     },
     {
       "@context": {
@@ -386,10 +435,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "Tclassification"
+        "@value": null
       },
       "Type of input": {
         "@value": "categorical"
@@ -414,7 +464,8 @@
           },
           "Identification for category used in model": {
             "@value": "0"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/7d6105f8-2360-4507-8b41-a53894916634"
         },
         {
           "@context": {
@@ -427,7 +478,8 @@
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/3cb80666-ebf8-4366-ac35-104385e49504"
         },
         {
           "@context": {
@@ -440,7 +492,8 @@
           },
           "Identification for category used in model": {
             "@value": "2"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/03b4561a-71f4-4346-9db6-872e3eba7139"
         },
         {
           "@context": {
@@ -453,7 +506,8 @@
           },
           "Identification for category used in model": {
             "@value": "3"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/afddafb2-e314-482b-b348-e24714fd6891"
         },
         {
           "@context": {
@@ -466,7 +520,8 @@
           },
           "Identification for category used in model": {
             "@value": "4"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/8af58372-9d0e-4033-b1e1-259289e8b4c1"
         },
         {
           "@context": {
@@ -479,13 +534,18 @@
           },
           "Identification for category used in model": {
             "@value": "x"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/440c1834-e93a-498b-8b5f-6e48d65742ae"
         }
       ],
       "Input feature": {
         "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48885",
         "rdfs:label": "Generic Primary Tumor TNM Finding"
-      }
+      },
+      "Input label": {
+        "@value": "Tclassification"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/7455dd93-9f2e-480f-8066-d1045265448b"
     },
     {
       "@context": {
@@ -494,10 +554,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "Nclassification"
+        "@value": null
       },
       "Type of input": {
         "@value": "categorical"
@@ -522,7 +583,8 @@
           },
           "Identification for category used in model": {
             "@value": "0"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/007eed31-d04f-43df-97f4-eec6699300f0"
         },
         {
           "@context": {
@@ -535,7 +597,8 @@
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/0068f7a2-7270-4c63-adc4-fa0483b32229"
         },
         {
           "@context": {
@@ -548,7 +611,8 @@
           },
           "Identification for category used in model": {
             "@value": "2"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/f38c01e8-28bf-47ed-8ee3-5357a930a717"
         },
         {
           "@context": {
@@ -561,7 +625,8 @@
           },
           "Identification for category used in model": {
             "@value": "3"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/effa3646-7d5b-4369-b494-5e56e178b405"
         },
         {
           "@context": {
@@ -574,13 +639,18 @@
           },
           "Identification for category used in model": {
             "@value": "x"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/e26301a0-3f44-401a-998e-00a747eed2c7"
         }
       ],
       "Input feature": {
         "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C48884",
         "rdfs:label": "Generic Regional Lymph Nodes TNM Finding"
-      }
+      },
+      "Input label": {
+        "@value": "Nclassification"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/bc9de7a0-0b4f-4a9a-8ad5-61b8ac99b527"
     },
     {
       "@context": {
@@ -589,10 +659,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "Systherapy"
+        "@value": null
       },
       "Type of input": {
         "@value": "categorical"
@@ -617,7 +688,8 @@
           },
           "Identification for category used in model": {
             "@value": "1"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/966a4f44-7da3-41fd-b632-2a3ad9c17e71"
         },
         {
           "@context": {
@@ -630,13 +702,18 @@
           },
           "Identification for category used in model": {
             "@value": "0"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/855f23b8-5de0-4c78-9e1a-7f85727b84b0"
         }
       ],
       "Input feature": {
         "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C15698",
         "rdfs:label": "Systemic Therapy"
-      }
+      },
+      "Input label": {
+        "@value": "Systherapy"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/82bbf003-87dc-4afe-929b-62b67e285a22"
     },
     {
       "@context": {
@@ -645,41 +722,11 @@
         "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
         "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
         "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
       },
       "Description": {
-        "@value": "RTdose_subman"
-      },
-      "Type of input": {
-        "@value": "numerical"
-      },
-      "Minimum - for numerical": {
-        "@value": "0",
-        "@type": "xsd:decimal"
-      },
-      "Maximum - for numerical": {
-        "@value": "60",
-        "@type": "xsd:decimal"
-      },
-      "Categories": [
-        {}
-      ],
-      "Input feature": {
-        "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C190594",
-        "rdfs:label": "Radiation Dose"
-      }
-    },
-    {
-      "@context": {
-        "Description": "https://schema.metadatacenter.org/properties/4c6f052b-1e7d-4565-88a9-494d8aafcb31",
-        "Type of input": "https://schema.metadatacenter.org/properties/95342d30-2c39-4919-876d-ae3e95961b20",
-        "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
-        "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
-        "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
-        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db"
-      },
-      "Description": {
-        "@value": "RTdosesalivary"
+        "@value": "Radiotherapy dose on contralateral submandibular gland (Gy)"
       },
       "Type of input": {
         "@value": "numerical"
@@ -698,7 +745,47 @@
       "Input feature": {
         "@id": "http://purl.bioontology.org/ontology/LNC/MTHU049454",
         "rdfs:label": "Radiation dose"
-      }
+      },
+      "Input label": {
+        "@value": "RTdose_subman"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/6237816d-4f07-472c-8b27-398b7b460afa"
+    },
+    {
+      "@context": {
+        "Description": "https://schema.metadatacenter.org/properties/4c6f052b-1e7d-4565-88a9-494d8aafcb31",
+        "Type of input": "https://schema.metadatacenter.org/properties/95342d30-2c39-4919-876d-ae3e95961b20",
+        "Minimum - for numerical": "https://schema.metadatacenter.org/properties/9e41f733-5b8b-499a-9248-29dbccd2e270",
+        "Maximum - for numerical": "https://schema.metadatacenter.org/properties/c471135e-7017-4ae6-a78b-669adf181265",
+        "Categories": "https://schema.metadatacenter.org/properties/2c885c9f-73b1-4442-aa25-f7800a8f9911",
+        "Input feature": "https://schema.metadatacenter.org/properties/f6df0f4f-af95-4d52-b003-f9d6d1b474db",
+        "Input label": "https://schema.metadatacenter.org/properties/c445b2c0-9b1e-46ac-909d-7e8fd7c9e8ae"
+      },
+      "Description": {
+        "@value": "Radiotherapy dose on contralateral parotid salivary gland (Gy)"
+      },
+      "Type of input": {
+        "@value": "numerical"
+      },
+      "Minimum - for numerical": {
+        "@value": "0",
+        "@type": "xsd:decimal"
+      },
+      "Maximum - for numerical": {
+        "@value": "60",
+        "@type": "xsd:decimal"
+      },
+      "Categories": [
+        {}
+      ],
+      "Input feature": {
+        "@id": "http://purl.bioontology.org/ontology/LNC/MTHU049454",
+        "rdfs:label": "Radiation dose"
+      },
+      "Input label": {
+        "@value": "RTdosesalivary"
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/bf7dfb21-3902-4f5d-8da2-c38772cc4a86"
     }
   ],
   "General Model Information": {
@@ -711,7 +798,8 @@
       "Creation date": "https://schema.metadatacenter.org/properties/87af2a5e-2f89-4448-9143-369705fef329",
       "References to code": "https://schema.metadatacenter.org/properties/1eb8a612-f726-4b6a-aa8f-1ebff646774d",
       "Software License": "https://schema.metadatacenter.org/properties/cfc3fb18-f0a9-45f3-a9ac-bebae520ac12",
-      "FAIRmodels image name": "https://schema.metadatacenter.org/properties/f75e9b9c-0891-4040-849d-fdc034a35e7d"
+      "FAIRmodels image name": "https://schema.metadatacenter.org/properties/f75e9b9c-0891-4040-849d-fdc034a35e7d",
+      "Docker image details (exposed port)": "https://schema.metadatacenter.org/properties/7c3bdcc2-6c2e-48f5-b670-880ae1cf743d"
     },
     "Title": {
       "@value": "Prediction model for tube feeding dependency during chemoradiotherapy for at least four weeks in head and neck cancer patients"
@@ -736,13 +824,20 @@
     },
     "References to code": [
       {
-        "@value": ""
+        "@value": null
       }
     ],
-    "Software License": {},
+    "Software License": {
+      "@id": "http://www.ebi.ac.uk/swo/license/SWO_1000001",
+      "rdfs:label": "Creative Commons"
+    },
     "FAIRmodels image name": {
-      "@value": "jvsoest/willemsen_tubefeed"
-    }
+      "@value": "ghcr.io/maastrichtu-cds/faivor_models/willemsen_tubefeed:latest"
+    },
+    "Docker image details (exposed port)": {
+      "@value": null
+    },
+    "@id": "https://repo.metadatacenter.org/template-element-instances/3679477a-170b-4d01-af63-15019fed813d"
   },
   "Outcome": {
     "@id": "http://purl.bioontology.org/ontology/SNOMEDCT/61420007",
@@ -750,7 +845,7 @@
   },
   "Applicability criteria": [
     {
-      "@value": "Patients diagnosed with locally advanced head and neck squamous cell carcinoma (LAHNSCC). Patients undergoing chemoradiotherapy (CRT) or bioradiotherapy (BRT) with curative intent. Patients who are starting primary or adjuvant radiotherapy combined with either cisplatin, carboplatin, or cetuximab."
+      "@value": null
     }
   ],
   "Foundational model or algorithm used": {
@@ -835,11 +930,12 @@
           },
           "Additional information (if needed)": {
             "@value": null
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/fa4d604a-a032-46e6-93e2-104279960c59"
         }
       ],
       "sha256 of docker image": {
-        "@value": "njnjnj"
+        "@value": null
       },
       "user/hospital": {
         "@value": null
@@ -860,12 +956,9 @@
             "The low 95% confidence interval - for numerical feature": "https://schema.metadatacenter.org/properties/0f2bc2b0-37e6-4392-aec1-41c86a61d009",
             "The high 95% confidence interval - for numerical feature": "https://schema.metadatacenter.org/properties/ea2134fc-80dc-44df-9120-1b8be9f5c089"
           },
-          "Input feature": {
-            "@id": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C190594",
-            "rdfs:label": "Radiation Dose"
-          },
+          "Input feature": {},
           "Volume": {
-            "@value": "600"
+            "@value": null
           },
           "The characteristics of dataset": {
             "@value": null
@@ -883,7 +976,8 @@
               "Category Label": {},
               "Distribution for category": {
                 "@value": null
-              }
+              },
+              "@id": "https://repo.metadatacenter.org/template-element-instances/fab938bb-c646-43aa-81cc-951695cccccd"
             }
           ],
           "The number of subject for evaluation": {
@@ -901,9 +995,11 @@
           "The high 95% confidence interval - for numerical feature": {
             "@value": null,
             "@type": "xsd:decimal"
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/7d33fad9-2212-467a-bd83-dce3455660f8"
         }
-      ]
+      ],
+      "@id": "https://repo.metadatacenter.org/template-element-instances/dc119278-823c-4947-9c7f-2e2d93f3dbff"
     }
   ],
   "Previous model tests": [
@@ -915,38 +1011,6 @@
         "Notes": "https://schema.metadatacenter.org/properties/c6428800-ffc3-41b6-986a-3a95ae936c6e"
       },
       "Performance metric": [
-        {
-          "@context": {
-            "Metric Label": "https://schema.metadatacenter.org/properties/f247f273-151f-4c1d-bd69-8ed6a728ed33",
-            "Measured metric (mean value)": "https://schema.metadatacenter.org/properties/e6a0cec6-e37d-431c-8480-e3eba2f0d071",
-            "Measured metric (low 95% confidence interval)": "https://schema.metadatacenter.org/properties/d93c93b8-f1ce-4d2b-b78d-1b0f2d0c1ef2",
-            "Measured metric (up 95% confidence interval)": "https://schema.metadatacenter.org/properties/5aa71926-22e4-4628-b563-5c116fd8f67e",
-            "Acceptance level": "https://schema.metadatacenter.org/properties/668d9bbc-ae81-4af0-a11e-7a401c409f98",
-            "Additional information (if needed)": "https://schema.metadatacenter.org/properties/cbcf4b91-fcb5-4462-8eae-77cba960c0e0"
-          },
-          "Metric Label": {
-            "@id": "http://purl.obolibrary.org/obo/STATO_0000608",
-            "rdfs:label": "area under the receiver operator characteristic curve"
-          },
-          "Measured metric (mean value)": {
-            "@value": "0.748",
-            "@type": "xsd:decimal"
-          },
-          "Measured metric (low 95% confidence interval)": {
-            "@value": "0.701",
-            "@type": "xsd:decimal"
-          },
-          "Measured metric (up 95% confidence interval)": {
-            "@value": "0.796"
-          },
-          "Acceptance level": {
-            "@value": null,
-            "@type": "xsd:decimal"
-          },
-          "Additional information (if needed)": {
-            "@value": null
-          }
-        },
         {
           "@context": {
             "Metric Label": "https://schema.metadatacenter.org/properties/f247f273-151f-4c1d-bd69-8ed6a728ed33",
@@ -977,18 +1041,56 @@
           },
           "Additional information (if needed)": {
             "@value": null
-          }
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/adf92695-d0cf-472d-add2-5a9ea9b3d030"
+        },
+        {
+          "@context": {
+            "Metric Label": "https://schema.metadatacenter.org/properties/f247f273-151f-4c1d-bd69-8ed6a728ed33",
+            "Measured metric (mean value)": "https://schema.metadatacenter.org/properties/e6a0cec6-e37d-431c-8480-e3eba2f0d071",
+            "Measured metric (low 95% confidence interval)": "https://schema.metadatacenter.org/properties/d93c93b8-f1ce-4d2b-b78d-1b0f2d0c1ef2",
+            "Measured metric (up 95% confidence interval)": "https://schema.metadatacenter.org/properties/5aa71926-22e4-4628-b563-5c116fd8f67e",
+            "Acceptance level": "https://schema.metadatacenter.org/properties/668d9bbc-ae81-4af0-a11e-7a401c409f98",
+            "Additional information (if needed)": "https://schema.metadatacenter.org/properties/cbcf4b91-fcb5-4462-8eae-77cba960c0e0"
+          },
+          "Metric Label": {
+            "@id": "http://purl.obolibrary.org/obo/STATO_0000608",
+            "rdfs:label": "area under the receiver operator characteristic curve"
+          },
+          "Measured metric (mean value)": {
+            "@value": "0.748",
+            "@type": "xsd:decimal"
+          },
+          "Measured metric (low 95% confidence interval)": {
+            "@value": "0.701",
+            "@type": "xsd:decimal"
+          },
+          "Measured metric (up 95% confidence interval)": {
+            "@value": "0.796"
+          },
+          "Acceptance level": {
+            "@value": null,
+            "@type": "xsd:decimal"
+          },
+          "Additional information (if needed)": {
+            "@value": null
+          },
+          "@id": "https://repo.metadatacenter.org/template-element-instances/9216e64e-3226-4777-8a2b-b2e4da9afd1e"
         }
       ],
       "Link to dataset": {},
       "Link to reference paper": {
-        "@id": "https://doi.org/10.1016/j.clnu.2019.11.033"
+        "@id": "https://doi.org/10.1016/j.clnu.2019.11.03"
       },
       "Notes": {
-        "@value": "Data were collected in patients with LAHNSCC starting CRT/BRT in Maastricht University Medical Center (MUMCþ) and the University Medical Center Utrecht (UMCU) between January 1st 2013 and December 31st 2016."
-      }
+        "@value": "Data were collected in patients with LAHNSCC starting CRT/BRT in Maastricht University Medical Center (MUMC'fe) and the University Medical Center Utrecht (UMCU) between January 1st 2013 and December 31st 2016."
+      },
+      "@id": "https://repo.metadatacenter.org/template-element-instances/14507888-0a8d-4829-b53b-0739619e0452"
     }
   ],
+  "Outcome label": {
+    "@value": null
+  },
   "21c6f103-2897-46e4-9800-d6756aec8fea": {},
   "eb387f72-1d95-42fd-a368-dc157fd6d8bc": {},
   "8a5c5fda-0607-4cbf-8941-a8be9d05a83b": {},
@@ -996,7 +1098,12 @@
   "9128f569-aca5-487d-93d6-3a99ad2073a1": {},
   "1bb43806-9e82-4e65-86f9-cebb4e7f3b38": {},
   "b4db2a96-c081-453b-b09c-caf7516d147d": {},
-  "schema:isBasedOn": "https://repo.metadatacenter.org/templates/b73f7c2c-b8fa-4b8c-b9e8-258a24bb1df7",
-  "schema:name": "Model Card metadata",
-  "schema:description": "The update template for FAIVOR project"
+  "schema:isBasedOn": "https://repo.metadatacenter.org/templates/7e9dc57b-88b5-45e6-bb8a-5a5533ef092b",
+  "schema:name": "PEG tube feeding",
+  "schema:description": "The update template for FAIVOR project",
+  "pav:createdOn": "2025-03-25T06:15:31-07:00",
+  "pav:createdBy": "https://metadatacenter.org/users/be4fcc5f-a1b1-44f3-8d39-c3df59c9196e",
+  "pav:lastUpdatedOn": "2025-03-25T06:37:56-07:00",
+  "oslc:modifiedBy": "https://metadatacenter.org/users/be4fcc5f-a1b1-44f3-8d39-c3df59c9196e",
+  "@id": "https://repo.metadatacenter.org/template-instances/1cc351c0-3ff3-473a-923e-1fbec9cc5d18"
 }
