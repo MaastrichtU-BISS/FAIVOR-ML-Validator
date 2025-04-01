@@ -43,10 +43,12 @@ def test_create_json_payloads(shared_datadir):
         # Further checks can include verifying content correctness
         first_input = inputs[0]
         assert isinstance(first_input, dict)
-        assert model_metadata.inputs[0]["description"] in inputs[0]
+        assert model_metadata.inputs[0]["input_label"] in inputs[0]
         assert model_metadata.output in outputs[0]
 
 def get_model_paths(shared_datadir: Path) -> List[Path]:
     """Retrieve model paths from shared data directory."""
     model_dir = shared_datadir / "models"
+    # Return only the first model
+    # return [model_dir / "pilot-model_1"]
     return [model_dir / subdir for subdir in model_dir.iterdir() if subdir.is_dir()]
