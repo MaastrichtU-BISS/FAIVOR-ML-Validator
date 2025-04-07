@@ -3,7 +3,7 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads
 from faivor.run_docker import execute_model
 
-model:str = "pilot-model_2"
+model:str = "pilot-model_1"
 
 def test_model_execution(shared_datadir):
     model_dir = shared_datadir / "models"

@@ -1,10 +1,11 @@
+import json
 import logging
 import docker
 import requests
 import socket
 import time
 from contextlib import closing
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 
 # Mapping of status codes to strings
 status_map = {
@@ -164,11 +165,16 @@ def retrieve_result(base_url: str) -> list[float]:
 
     try:
         data = resp.json()
-        if isinstance(data, list):
-            return [float(x) for x in data]
-        return [float(data)]
+        return parse_ordered_response(data)
     except Exception as ex:
         raise RuntimeError(f"Failed to parse result from /result: {ex}")
+
+
+def parse_ordered_response(response_json: str) -> List[float]:
+    parsed = json.loads(response_json)
+    ordered = [value for key, value in sorted(parsed.items(), key=lambda item: int(item[0]))]
+    return ordered
+
 
 def stop_docker_container(container: docker.models.containers.Container) -> None:
     """
