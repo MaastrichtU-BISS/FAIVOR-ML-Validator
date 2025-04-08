@@ -40,7 +40,7 @@ ipykernel = "^6.29.5"
 run-api = "uvicorn src.faivor.api_controller:app --reload"
 
 [[tool.poetry.source]]
-name = "torchcpu"
+name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 priority = "explicit"
 
