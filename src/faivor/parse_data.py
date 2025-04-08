@@ -46,7 +46,7 @@ def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, 
     delimiter = detect_delimiter(csv_path)
     df = pd.read_csv(csv_path, sep=delimiter)
 
-    input_columns = [input_feature["description"] for input_feature in metadata.inputs]
+    input_columns = [input_feature["input_label"] for input_feature in metadata.inputs]
     output_column = metadata.output
 
     inputs = df[input_columns].to_dict(orient="records")

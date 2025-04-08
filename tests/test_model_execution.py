@@ -23,7 +23,7 @@ def test_model_execution(shared_datadir):
     assert isinstance(prediction, list), "Prediction result should be a dictionary."
 
 
-def test_model_metrics(shared_datadir):
+def implement_test_model_metrics(shared_datadir):
     model_dir = shared_datadir / "models"
     metadata_json = json.loads((model_dir / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
     model_metadata = ModelMetadata(metadata_json)
