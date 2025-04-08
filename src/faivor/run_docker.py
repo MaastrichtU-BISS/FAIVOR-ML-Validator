@@ -170,10 +170,9 @@ def retrieve_result(base_url: str) -> list[float]:
         raise RuntimeError(f"Failed to parse result from /result: {ex}")
 
 
-def parse_ordered_response(response_json: str) -> List[float]:
-    parsed = json.loads(response_json)
-    ordered = [value for key, value in sorted(parsed.items(), key=lambda item: int(item[0]))]
-    return ordered
+def parse_ordered_response(data: dict) -> List[float]:
+    return [data[str(i)] for i in sorted(map(int, data.keys()))]
+
 
 
 def stop_docker_container(container: docker.models.containers.Container) -> None:
