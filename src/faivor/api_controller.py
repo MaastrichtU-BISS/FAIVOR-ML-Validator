@@ -1,4 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import JSONResponse
+from pathlib import Path
+import tempfile
+import shutil
+import json
+
+from faivor.model_metadata import ModelMetadata
+from faivor.parse_data import create_json_payloads
 
 app = FastAPI()
 
@@ -6,6 +14,45 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+@app.post("/validate-csv/")
+async def validate_csv(
+    metadata_json: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """
+    Validate a CSV file against provided metadata and return parsed input/output payloads.
+
+    Parameters
+    ----------
+    metadata_json : str
+        JSON string containing metadata (inputs and output column).
+    file : UploadFile
+        CSV file uploaded by the user.
+
+    Returns
+    -------
+    JSONResponse
+        Parsed input and output payloads.
+    """
+    try:
+        metadata_dict = json.loads(metadata_json)
+        metadata = ModelMetadata(metadata_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid metadata JSON: {str(e)}")
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = Path(tmp.name)
+
+        inputs, outputs = create_json_payloads(metadata, tmp_path)
+        return JSONResponse(content={"inputs": inputs, "outputs": outputs})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process CSV: {str(e)}")
+    
+
+
 
 @app.post("/evaluate")
 async def evaluate():
