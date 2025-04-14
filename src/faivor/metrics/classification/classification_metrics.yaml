@@ -84,6 +84,26 @@ performance:
     description: Compute confusion matrix to evaluate the accuracy of a classification.
     func: sklearn.metrics.confusion_matrix
     is_torch: false
+  - function_name: negative_predictive_value
+    regular_name: Negative Predictive Value
+    description: Compute Negative Predictive Value from a confusion matrix.
+    func: faivor.metrics.classification.performance.negative_predictive_value
+    is_torch: false
+  - function_name: positive_predictive_value
+    regular_name: Positive Predictive Value
+    description: Compute Positive Predictive Value from a confusion matrix.
+    func: faivor.metrics.classification.performance.positive_predictive_value
+    is_torch: false
+  - function_name: specificity
+    regular_name: Specificity
+    description: Compute specificity.
+    func: faivor.metrics.classification.performance.specificity
+    is_torch: false
+  - function_name: calibration_curve
+    regular_name: Calibration Curve
+    description: Compute Calibration Curve.
+    func: sklearn.calibration.calibration_curve
+    is_torch: false
 
 fairness:
   - function_name: disparate_impact
