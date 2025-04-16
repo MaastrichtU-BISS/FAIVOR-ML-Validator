@@ -26,6 +26,16 @@ class ModelMetadata:
         self.references: List[str] = [ref.get("@value") for ref in general_info.get("References to papers", []) if ref.get("@value")]
         self.contact_email: Optional[str] = general_info.get("Contact email", {}).get("@value")
 
+    def validate(self) -> bool:
+        """
+        Validate the metadata making sure it contains all required fields.
+        
+        Returns:
+            bool: True if metadata is valid, False otherwise
+        """
+        required_fields = ["model_name", "inputs", "output"]
+        return all(getattr(self, field) for field in required_fields)
+    
     def _parse_inputs(self) -> List[Dict[str, str]]:
         """
         Extract and normalize input features from the metadata.
@@ -61,3 +71,4 @@ class ModelMetadata:
             "references": self.references,
             "contact_email": self.contact_email
         }, indent=2)
+
