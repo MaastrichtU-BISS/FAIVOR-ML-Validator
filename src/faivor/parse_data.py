@@ -4,7 +4,6 @@ from pathlib import Path
 import csv
 from typing import List, Dict, Any, Tuple
 
-
 def detect_delimiter(csv_path: Path) -> str:
     """
     Detect the delimiter used in a CSV file.
@@ -19,10 +18,13 @@ def detect_delimiter(csv_path: Path) -> str:
     str
         The detected delimiter (either ';' or ',').
     """
-    with open(csv_path, "r", encoding="utf-8") as file:
-        sample = file.read(1024)  # Read a sample of the file
-        dialect = csv.Sniffer().sniff(sample, delimiters=";,")
-        return dialect.delimiter
+    try:
+        with open(csv_path, "r", encoding="utf-8") as file:
+            sample = file.read(1024)  # Read a sample of the file
+            dialect = csv.Sniffer().sniff(sample, delimiters=";,\t|") #comma, semicolon, tab for tsv
+            return dialect.delimiter
+    except (FileNotFoundError, IOError) as e:
+        raise IOError(f"Could not open CSV file: {e}")
 
 
 def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
