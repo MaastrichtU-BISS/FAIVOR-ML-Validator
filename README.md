@@ -1,6 +1,6 @@
-# ML Model Validator
+# FAIRmodels Validator
 
-Validator library for ML models.
+Validator library for ML models (FAIRmodels).
 
 ![](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![GitHub license](https://img.shields.io/github/license/MaastrichtU-BISS/FAIVOR-backend)
@@ -13,23 +13,40 @@ The architecture of the project is shown in the following diagram:
 
 ![techstack](./architecture.drawio.png)
 
-## Installation and running locally
+## Local development
 
-Install the dependencies with
-```bash
-poetry install
-```
+### Environment setup and service run
 
-The project requires Python 3.11. You can explicitly set the Python version (alternative to the previous command) with the following command:
+1. **Clone the Repository**  
+   Clone the project repository to your local machine.
 
-```bash
-poetry env use python3.11 && poetry install
-```
+2. **Install Dependencies**  
+   In the root directory of the repository, run the following command to install dependencies (Python 3.11+ and Poetry 1.0+ required):
 
-Run the REST API server:
+   `poetry install`
+
+3. **Activate the Virtual Environment**  
+   Activate the virtual environment created by Poetry with:
+
+   `poetry shell`
+
+4. Juptyer Notebook Kernel  
+   To use this environment in Jupyter notebooks, install a custom kernel by running:
+
+   `python -m ipykernel install --user --name=faivor-ml-validator --display-name "FAIVOR-ML-Validator"`
+
+   This command makes the environment available in Jupyter Notebook under the kernel name **FAIVOR-ML-Validator**.
+
+### Run the REST API server
+
+To run the REST API server, execute the following command:
 
 ```bash
 uvicorn src.FAIRmodels-validator.api_controller:app --reload
 ```
 
 The server will be running on [http://localhost:8000](http://localhost:8000). You can access the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+## Local development
+
+To get started with this project, please follow these steps to set up the environment and configure Jupyter for notebook use:

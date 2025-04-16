@@ -11,7 +11,11 @@ RUN pip install poetry
 COPY pyproject.toml poetry.lock /app/
 
 # Copy the application code before installing dependencies
-COPY . /app
+COPY ./src /app/src
+
+COPY ./poetry.lock /app/
+COPY ./pyproject.toml /app/
+COPY ./README.md /app/
 
 # Set the PYTHONPATH environment variable
 ENV PYTHONPATH=/app/src

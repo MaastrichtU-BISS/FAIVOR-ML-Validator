@@ -4,6 +4,8 @@ on:
   workflow_dispatch:  # This line adds the manual trigger
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   REGISTRY: ghcr.io
@@ -40,14 +42,14 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
-
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false  # Do not push at this stage
           tags: ${{ steps.meta.outputs.tags }}
-
+          outputs: type=image  # Ensure only final image is used
+  
       - name: Push Docker image
         uses: docker/build-push-action@v6
         with:
