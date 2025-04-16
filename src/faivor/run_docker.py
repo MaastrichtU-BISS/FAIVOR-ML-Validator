@@ -170,10 +170,23 @@ def retrieve_result(base_url: str) -> list[float]:
         raise RuntimeError(f"Failed to parse result from /result: {ex}")
 
 
+# def parse_ordered_response(data: dict) -> List[float]: 
+#     return [data[str(i)] for i in sorted(map(int, data.keys()))]
+
 def parse_ordered_response(data: dict) -> List[float]:
-    return [data[str(i)] for i in sorted(map(int, data.keys()))]
-
-
+    """
+    Parse API response with keys that may have prefixes like 'prediction_0'
+    """
+    # check if keys have a prefix like 'prediction_'
+    if any(not key.isdigit() for key in data.keys()):
+        # extract numbers from keys like 'prediction_0' (not sure whether we need a more robust way to deal wtth schema or this is fine. TODO: need to discuss with vedran)
+        result = []
+        for key in sorted(data.keys(), key=lambda k: int(k.split('_')[-1]) if '_' in k else int(k)):
+            result.append(data[key])
+        return result
+    else:
+        # Original behavior for simple numeric keys
+        return [data[str(i)] for i in sorted(map(int, data.keys()))]
 
 def stop_docker_container(container: docker.models.containers.Container) -> None:
     """
