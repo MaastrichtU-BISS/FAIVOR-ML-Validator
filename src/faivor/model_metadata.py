@@ -57,9 +57,26 @@ class ModelMetadata:
         return inputs
 
     def _parse_output(self) -> str:
+        """
+        Extract the model's output label from the metadata.
+        
+        Returns:
+            str: The output label value from the 'Outcome label' field
+        """
+                
         return self.metadata.get("Outcome label", {}).get("@value", "")
 
     def __repr__(self) -> str:
+        """
+        Create a string representation of the class object.
+        
+        Returns a JSON string containing the key attributes of the
+        model metadata
+        
+        Returns:
+            str: JSON string representation of the model metadata
+        """
+                
         return json.dumps({
             "model_name": self.model_name,
             "description": self.description,
