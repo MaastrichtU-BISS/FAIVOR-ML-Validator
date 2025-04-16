@@ -85,8 +85,35 @@ def test_model_metrics(shared_datadir):
         
     assert len(y_true) == len(y_pred), "Number of predictions doesn't match number of expected outputs"
     
-    # determine if model is classification or regression. TODO: need to add model_type to metadata
+    # check if model_type is provided in metadata, otherwise default to regression
     model_type = metadata_json.get("model_type", "regression")
+    
+    # check if sensitive_attribute is provided in metadata
+    sensitive_attribute = metadata_json.get("sensitive_attribute")
+    if sensitive_attribute:
+        print(f"Found sensitive attribute in metadata: {sensitive_attribute}")
+        # check if we have sensitive attribute values in the input data
+        sensitive_values = []
+        for i in valid_indices:
+            if isinstance(inputs[i], dict) and sensitive_attribute in inputs[i]:
+                sensitive_values.append(inputs[i][sensitive_attribute])
+            else:
+                sensitive_values.append(None)
+        
+        if any(v is not None for v in sensitive_values):
+            sensitive_values = np.array(sensitive_values)
+            print(f"Using sensitive attribute values: {sensitive_values}")
+        else:
+            sensitive_values = None
+            print("Sensitive attribute not found in input data")
+    else:
+        sensitive_values = None
+        print("No sensitive attribute defined in metadata")
+    
+    # check if feature_importance is provided in metadata
+    feature_importance = metadata_json.get("feature_importance")
+    if feature_importance:
+        print(f"Found feature importance in metadata: {feature_importance}")
     
     print(f"\nModel type detected: {model_type}")
     
@@ -99,7 +126,7 @@ def test_model_metrics(shared_datadir):
             try:
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"performance.{metric.regular_name}"] = result
-                print(f"Performance metric - {metric.regular_name}: {result}")
+                print(f"+ Performance metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"Could not compute {metric.regular_name}: {e}")
         
@@ -107,13 +134,18 @@ def test_model_metrics(shared_datadir):
         for metric in classification_metrics.fairness:
             try:
                 if metric.function_name == "demographic_parity_ratio":
-                    # requires a sensitive attribute. TODO: need to add sensitive attribute to metadata
-                    print(f"Fairness metric - {metric.regular_name}: requires sensitive attributes (not computed)")
+                    # check if we have sensitive attribute data
+                    if sensitive_values is not None:
+                        result = metric.compute(y_true, y_pred, sensitive_values)
+                        all_metrics[f"fairness.{metric.regular_name}"] = result
+                        print(f"+ Fairness metric - {metric.regular_name}: {result}")
+                    else:
+                        print(f"+ Fairness metric - {metric.regular_name}: requires sensitive attributes (not computed)")
                     continue
                     
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"fairness.{metric.regular_name}"] = result
-                print(f"Fairness metric - {metric.regular_name}: {result}")
+                print(f"+ Fairness metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"Could not compute {metric.regular_name}: {e}")
         
@@ -121,13 +153,18 @@ def test_model_metrics(shared_datadir):
         for metric in classification_metrics.explainability:
             try:
                 if metric.function_name == "feature_importance_ratio":
-                    # requires feature importance values. TODO: need to add feature importance to metadata
-                    print(f"Explainability metric - {metric.regular_name}: requires feature importances (not computed)")
+                    # check if we have feature importance data
+                    if feature_importance:
+                        result = metric.compute(y_true, y_pred, feature_importance=feature_importance)
+                        all_metrics[f"explainability.{metric.regular_name}"] = result
+                        print(f"+ Explainability metric - {metric.regular_name}: {result}")
+                    else:
+                        print(f"+ Explainability metric - {metric.regular_name}: requires feature importances (not computed)")
                     continue
                     
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"explainability.{metric.regular_name}"] = result
-                print(f"Explainability metric - {metric.regular_name}: {result}")
+                print(f"+ Explainability metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"\nCould not compute {metric.regular_name}: {e}")
                 
@@ -138,7 +175,7 @@ def test_model_metrics(shared_datadir):
             try:
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"performance.{metric.regular_name}"] = result
-                print(f"Performance metric - {metric.regular_name}: {result}")
+                print(f"+ Performance metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"Could not compute {metric.regular_name}: {e}")
         
@@ -146,12 +183,18 @@ def test_model_metrics(shared_datadir):
         for metric in regression_metrics.fairness:
             try:
                 if metric.function_name == "demographic_parity_ratio":
-                    print(f"Fairness metric - {metric.regular_name}: requires sensitive attributes (not computed)")
+                    # check if we have sensitive attribute data
+                    if sensitive_values is not None:
+                        result = metric.compute(y_true, y_pred, sensitive_values)
+                        all_metrics[f"fairness.{metric.regular_name}"] = result
+                        print(f"+ Fairness metric - {metric.regular_name}: {result}")
+                    else:
+                        print(f"+ Fairness metric - {metric.regular_name}: requires sensitive attributes (not computed)")
                     continue
                     
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"fairness.{metric.regular_name}"] = result
-                print(f"Fairness metric - {metric.regular_name}: {result}")
+                print(f"+ Fairness metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"Could not compute {metric.regular_name}: {e}")
         
@@ -159,12 +202,18 @@ def test_model_metrics(shared_datadir):
         for metric in regression_metrics.explainability:
             try:
                 if metric.function_name == "feature_importance_ratio":
-                    print(f"Explainability metric - {metric.regular_name}: requires feature importances (not computed)")
+                    # check if we have feature importance data
+                    if feature_importance:
+                        result = metric.compute(y_true, y_pred, feature_importance=feature_importance)
+                        all_metrics[f"explainability.{metric.regular_name}"] = result
+                        print(f"+ Explainability metric - {metric.regular_name}: {result}")
+                    else:
+                        print(f"+ Explainability metric - {metric.regular_name}: requires feature importances (not computed)")
                     continue
                     
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"explainability.{metric.regular_name}"] = result
-                print(f"Explainability metric - {metric.regular_name}: {result}")
+                print(f"+ Explainability metric - {metric.regular_name}: {result}")
             except Exception as e:
                 print(f"Could not compute {metric.regular_name}: {e}")
     
