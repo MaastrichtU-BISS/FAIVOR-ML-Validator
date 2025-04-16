@@ -8,7 +8,12 @@ class ModelMetadata:
     """
 
     def __init__(self, metadata_json: Dict[str, Any]):
-        self.metadata: Dict[str, Any] = metadata_json
+        if not isinstance(metadata_json, dict):
+            raise TypeError("Expected a dictionary for metadata_json")            
+        self.metadata = metadata_json
+        if "General Model Information" not in metadata_json:
+            raise ValueError("Missing required 'General Model Information' section in metadata")
+    
         self.inputs: List[Dict[str, Any]] = self._parse_inputs()
         self.output: str = self._parse_output()
         self.output_label: Optional[str] = metadata_json.get("Outcome label", {}).get("@value")
@@ -22,6 +27,14 @@ class ModelMetadata:
         self.contact_email: Optional[str] = general_info.get("Contact email", {}).get("@value")
 
     def _parse_inputs(self) -> List[Dict[str, str]]:
+        """
+        Extract and normalize input features from the metadata.
+        
+        Returns:
+            List of dictionaries containing normalized input feature information.
+            Each dictionary includes input_label, description, type, and rdfs_label.
+        """
+        
         inputs: List[Dict[str, str]] = []
         for input_feature in self.metadata.get("Input data", []):
             feature = {

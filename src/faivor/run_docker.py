@@ -170,8 +170,6 @@ def retrieve_result(base_url: str) -> list[float]:
         raise RuntimeError(f"Failed to parse result from /result: {ex}")
 
 
-# def parse_ordered_response(data: dict) -> List[float]: 
-#     return [data[str(i)] for i in sorted(map(int, data.keys()))]
 
 def parse_ordered_response(data: dict) -> List[float]:
     """
