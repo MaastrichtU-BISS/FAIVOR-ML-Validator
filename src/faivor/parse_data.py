@@ -16,15 +16,43 @@ def detect_delimiter(csv_path: Path) -> str:
     Returns
     -------
     str
-        The detected delimiter (either ';' or ',').
+        The detected delimiter (comma, semicolon, tab, or pipe).
+
+    Raises
+    ------
+    IOError
+        If the file cannot be opened.
     """
     try:
-        with open(csv_path, "r", encoding="utf-8") as file:
-            sample = file.read(1024)  # Read a sample of the file
-            dialect = csv.Sniffer().sniff(sample, delimiters=";,\t|") #comma, semicolon, tab for tsv
+        with open(csv_path, "r", encoding="utf-8") as f:
+            sample = f.read(1024)
+            dialect = csv.Sniffer().sniff(sample, delimiters=";, \t|")
             return dialect.delimiter
     except (FileNotFoundError, IOError) as e:
-        raise IOError(f"Could not open CSV file: {e}")
+        raise IOError(f"Could not open CSV file: {e}") from e
+    
+
+def load_csv(csv_path: Path) -> pd.DataFrame:
+    """
+    Load a CSV file into a DataFrame using the detected delimiter.
+
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the CSV file.
+
+    Returns
+    -------
+    pd.DataFrame
+        The loaded data.
+
+    Raises
+    ------
+    pd.errors.ParserError
+        If the CSV cannot be parsed.
+    """
+    delimiter = detect_delimiter(csv_path)
+    return pd.read_csv(csv_path, sep=delimiter)
 
 
 def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -55,3 +83,5 @@ def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, 
     outputs = df[[output_column]].to_dict(orient="records")
 
     return inputs, outputs
+
+
