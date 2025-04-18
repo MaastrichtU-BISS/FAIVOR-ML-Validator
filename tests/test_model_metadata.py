@@ -1,50 +1,98 @@
 import json
+
+import pandas as pd
+import pytest
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads
+from faivor.parse_data import (
+    detect_delimiter,
+    load_csv,
+    validate_csv,
+    create_json_payloads,
+)
 from pathlib import Path
 from typing import List
 
 
+
 def test_model_metadata_creation(shared_datadir: Path):
-    """Test the creation of ModelMetadata objects from JSON metadata files."""
+    """ModelMetadata must populate all required fields."""
     for model_location in get_model_paths(shared_datadir):
-        model_metadata_path = model_location / "metadata.json"
-
-        with open(model_metadata_path, "r", encoding="utf-8") as file:
-            metadata_json = json.load(file)
-
-        model_metadata = ModelMetadata(metadata_json)
-
-        assert model_metadata.model_name is not None, "Model name should not be None"
-        assert model_metadata.docker_image is not None, "Docker image should not be None"
-        assert model_metadata.author is not None, "Author should not be None"
-        assert model_metadata.contact_email is not None, "Contact email should not be None"
-        assert isinstance(model_metadata.references, list), "References should be a list"
-        assert len(model_metadata.inputs) > 0, "Inputs should not be empty"
-        assert model_metadata.output != "", "Output should not be empty"
+        metadata_content = json.loads((model_location / "metadata.json").read_text(encoding="utf-8"))
+        metadata = ModelMetadata(metadata_content)
+        assert metadata.model_name, "model_name empty"
+        assert metadata.docker_image, "docker_image empty"
+        assert metadata.author, "author empty"
+        assert metadata.contact_email, "contact_email empty"
+        assert isinstance(metadata.references, list), "references not list"
+        assert metadata.inputs, "inputs empty"
+        assert metadata.output, "output empty"
 
 
-def test_create_json_payloads(shared_datadir):
+def test_create_json_payloads_and_validate(shared_datadir: Path):
+    """CSV → payloads round‑trip and format validation."""
     for model_location in get_model_paths(shared_datadir):
-        model_metadata_path = model_location / "metadata.json"
-
-        with open(model_metadata_path, "r", encoding="utf-8") as file:
-            metadata_json = json.load(file)
-
-        model_metadata = ModelMetadata(metadata_json)
+        metadata_content = json.loads((model_location / "metadata.json").read_text())
+        metadata = ModelMetadata(metadata_content)
         csv_path = model_location / "data.csv"
-        inputs, outputs = create_json_payloads(model_metadata, csv_path)
 
-        assert isinstance(inputs, list)
-        assert isinstance(outputs, list)
-        assert len(inputs) > 0
-        assert len(outputs) > 0
+        # validate_csv returns df, columns
+        df, cols = validate_csv(metadata, csv_path)
+        # all required present
+        for req in [inp["input_label"] for inp in metadata.inputs] + [metadata.output]:
+            assert req in cols
 
-        # Further checks can include verifying content correctness
-        first_input = inputs[0]
-        assert isinstance(first_input, dict)
-        assert model_metadata.inputs[0]["input_label"] in inputs[0]
-        assert model_metadata.output in outputs[0]
+        inputs, outputs = create_json_payloads(metadata, csv_path)
+        assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
+        assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
+        # spot‑check that keys match labels
+        assert set(inputs[0].keys()) == {inp["input_label"] for inp in metadata.inputs}
+        assert set(outputs[0].keys()) == {metadata.output}
+
+
+def test_validate_csv_missing_column(shared_datadir : Path, tmp_path: Path):
+    """validate_csv raises ValueError listing missing columns."""
+    # create a minimal metadata expecting 'a','b' inputs and 'c' output
+    metadata_content = json.loads((shared_datadir / "models" / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
+    metadata = ModelMetadata(metadata_content)
+    metadata.inputs.clear()
+    metadata.inputs.append({"input_label": "a"})
+    metadata.inputs.append({"input_label": "b"})
+    metadata.output = "c"
+    # write CSV with only 'a' and 'c'
+    p = tmp_path / "t.csv"
+    p.write_text("a,c\n1,2\n3,4\n", encoding="utf-8")
+
+    with pytest.raises(ValueError) as exc:
+        validate_csv(metadata, p)
+    msg = str(exc.value)
+    assert "Missing required columns" in msg
+    assert "b" in msg  # missing input
+    # should not mention 'c', since it's present
+    assert "c" not in msg.split(":" )[1]
+
+
+@pytest.mark.parametrize("content,expected", [
+    ("x,y\n1,2", ","),          # comma
+    ("x;y\n1;2", ";"),          # semicolon
+    ("x\ty\n1\t2", "\t"),       # tab
+    ("x|y\n1|2", "|"),          # pipe
+])
+def test_detect_delimiter_various(tmp_path: Path, content: str, expected: str):
+    """detect_delimiter should sniff , ; \\t and | correctly."""
+    p = tmp_path / "d.csv"
+    p.write_text(content, encoding="utf-8")
+    assert detect_delimiter(p) == expected
+
+
+def test_load_csv_and_roundtrip(tmp_path: Path):
+    """load_csv → DataFrame, then back to CSV yields same columns."""
+    content = "foo,bar\n10,20\n"
+    p = tmp_path / "test.csv"
+    p.write_text(content, encoding="utf-8")
+    df = load_csv(p)
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["foo", "bar"]
+
 
 def get_model_paths(shared_datadir: Path) -> List[Path]:
     """Retrieve model paths from shared data directory."""

@@ -55,33 +55,75 @@ def load_csv(csv_path: Path) -> pd.DataFrame:
     return pd.read_csv(csv_path, sep=delimiter)
 
 
-def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def validate_csv(
+    metadata: Any,
+    csv_path: Path
+) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Create JSON payloads for input and output data based on provided metadata and CSV file.
+    Validate that all required input and output columns exist in the CSV.
 
     Parameters
     ----------
-    metadata : ModelMetadata
-        Parsed model metadata object containing input/output columns information.
+    metadata : Any
+        Object with `.inputs` (list of dicts with "input_label") and `.output` (str).
     csv_path : Path
-        Path to the CSV file containing data to be parsed.
+        Path to the CSV file.
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, List[str]]
+        - df: the loaded DataFrame
+        - columns: list of all column names in the CSV
+
+    Raises
+    ------
+    ValueError
+        If any required column is missing.
+    """
+    df = load_csv(csv_path)
+
+    required = [inp["input_label"] for inp in metadata.inputs] + [metadata.output]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {', '.join(missing)}")
+
+    return df, df.columns.tolist()
+
+
+def create_json_payloads(
+    metadata: Any,
+    csv_path: Path
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Create JSON payloads for input and output data based on provided metadata and CSV file.
+
+    This function reuses `validate_csv` to ensure the CSV is valid before extracting payloads.
+
+    Parameters
+    ----------
+    metadata : Any
+        Parsed model metadata with `.inputs` (list of {"input_label": ...})
+        and `.output` (str).
+    csv_path : Path
+        Path to the CSV file.
 
     Returns
     -------
     Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]
-        A tuple containing two elements:
-        - inputs: List of dictionaries with input data for the model.
-        - outputs: List of dictionaries containing the output values.
+        - inputs: list of dicts for model inputs
+        - outputs: list of dicts for model outputs
+
+    Raises
+    ------
+    ValueError
+        If the CSV is missing required columns (propagated from `validate_csv`).
     """
-    delimiter = detect_delimiter(csv_path)
-    df = pd.read_csv(csv_path, sep=delimiter)
+    df, all_columns = validate_csv(metadata, csv_path)
 
-    input_columns = [input_feature["input_label"] for input_feature in metadata.inputs]
-    output_column = metadata.output
+    input_cols = [inp["input_label"] for inp in metadata.inputs]
+    output_col = metadata.output
 
-    inputs = df[input_columns].to_dict(orient="records")
-    outputs = df[[output_column]].to_dict(orient="records")
+    inputs = df[input_cols].to_dict(orient="records")
+    outputs = df[[output_col]].to_dict(orient="records")
 
     return inputs, outputs
-
-
