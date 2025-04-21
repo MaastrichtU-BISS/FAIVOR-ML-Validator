@@ -6,7 +6,7 @@ import shutil
 import json
 
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads
+from faivor.parse_data import validate_csv_format
 
 app = FastAPI()
 
@@ -46,8 +46,8 @@ async def validate_csv(
             shutil.copyfileobj(file.file, tmp)
             tmp_path = Path(tmp.name)
 
-        inputs, outputs = create_json_payloads(metadata, tmp_path)
-        return JSONResponse(content={"inputs": inputs, "outputs": outputs})
+        columns = validate_csv_format(metadata, tmp_path)
+        return JSONResponse(content={"csv_columns": columns})
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process CSV: {str(e)}")
     

@@ -55,7 +55,7 @@ def load_csv(csv_path: Path) -> pd.DataFrame:
     return pd.read_csv(csv_path, sep=delimiter)
 
 
-def validate_csv(
+def validate_csv_format(
     metadata: Any,
     csv_path: Path
 ) -> Tuple[pd.DataFrame, List[str]]:
@@ -87,7 +87,7 @@ def validate_csv(
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
-    return df, df.columns.tolist()
+    return df.columns.tolist()
 
 
 def create_json_payloads(
@@ -97,7 +97,7 @@ def create_json_payloads(
     """
     Create JSON payloads for input and output data based on provided metadata and CSV file.
 
-    This function reuses `validate_csv` to ensure the CSV is valid before extracting payloads.
+    This function reuses `validate_csv_format` to ensure the CSV is valid before extracting payloads.
 
     Parameters
     ----------
@@ -116,9 +116,9 @@ def create_json_payloads(
     Raises
     ------
     ValueError
-        If the CSV is missing required columns (propagated from `validate_csv`).
+        If the CSV is missing required columns (propagated from `validate_csv_format`).
     """
-    df, all_columns = validate_csv(metadata, csv_path)
+    df, all_columns = validate_csv_format(metadata, csv_path)
 
     input_cols = [inp["input_label"] for inp in metadata.inputs]
     output_col = metadata.output

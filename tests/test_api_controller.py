@@ -12,7 +12,7 @@ def test_root():
     assert response.status_code == 200
 
 
-def test_validate_csv(shared_datadir: Path):
+def test_validate_csv_format(shared_datadir: Path):
     model_dir = shared_datadir / "models"
     metadata_path = model_dir / "pilot-model_1" / "metadata.json"
     csv_path = model_dir / "pilot-model_1" / "data.csv"
@@ -31,5 +31,4 @@ def test_validate_csv(shared_datadir: Path):
 
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data.get("inputs"), list)
-    assert isinstance(data.get("outputs"), list)
+    assert isinstance(data.get("csv_columns"), list)

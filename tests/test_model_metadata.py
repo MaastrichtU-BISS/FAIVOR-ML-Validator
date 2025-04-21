@@ -6,7 +6,7 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import (
     detect_delimiter,
     load_csv,
-    validate_csv,
+    validate_csv_format,
     create_json_payloads,
 )
 from pathlib import Path
@@ -35,8 +35,8 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         metadata = ModelMetadata(metadata_content)
         csv_path = model_location / "data.csv"
 
-        # validate_csv returns df, columns
-        df, cols = validate_csv(metadata, csv_path)
+        # validate_csv_format returns df, columns
+        df, cols = validate_csv_format(metadata, csv_path)
         # all required present
         for req in [inp["input_label"] for inp in metadata.inputs] + [metadata.output]:
             assert req in cols
@@ -49,8 +49,8 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         assert set(outputs[0].keys()) == {metadata.output}
 
 
-def test_validate_csv_missing_column(shared_datadir : Path, tmp_path: Path):
-    """validate_csv raises ValueError listing missing columns."""
+def test_validate_csv_format_missing_column(shared_datadir : Path, tmp_path: Path):
+    """validate_csv_format raises ValueError listing missing columns."""
     # create a minimal metadata expecting 'a','b' inputs and 'c' output
     metadata_content = json.loads((shared_datadir / "models" / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
     metadata = ModelMetadata(metadata_content)
@@ -63,7 +63,7 @@ def test_validate_csv_missing_column(shared_datadir : Path, tmp_path: Path):
     p.write_text("a,c\n1,2\n3,4\n", encoding="utf-8")
 
     with pytest.raises(ValueError) as exc:
-        validate_csv(metadata, p)
+        validate_csv_format(metadata, p)
     msg = str(exc.value)
     assert "Missing required columns" in msg
     assert "b" in msg  # missing input
