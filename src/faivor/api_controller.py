@@ -1,9 +1,12 @@
+from typing import List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 import tempfile
 import shutil
 import json
+
+from pydantic import BaseModel
 
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import validate_csv_format
@@ -15,54 +18,63 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/validate-csv/")
+class ColumnsResponse(BaseModel):
+    csv_columns: List[str]
+
+@app.post(
+    "/validate-csv/",
+    response_model=ColumnsResponse,
+    summary="Validate CSV against model metadata",
+    description=(
+        "Uploads a FAIR model metadata JSON string and a CSV file, "
+        "verifies that all required columns are present, "
+        "and returns the list of CSV column names."
+    ),
+    responses={
+        400: {
+            "description": "Invalid metadata or CSV format",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Missing required columns: foo, bar"}
+                }
+            },
+        },
+    },
+)
 async def validate_csv(
-    metadata_json: str = Form(...),
-    file: UploadFile = File(...)
-):
+    model_metadata: str = Form(
+        ..., 
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field"
+    ),
+    csv_file: UploadFile = File(
+        ..., 
+        description="CSV file to validate; delimiter is auto-detected"
+    ),
+) -> JSONResponse:
     """
-    Validate a CSV file against provided metadata and return parsed input/output payloads.
-
-    Parameters
-    ----------
-    metadata_json : str
-        JSON string containing metadata (inputs and output column).
-    file : UploadFile
-        CSV file uploaded by the user.
-
-    Returns
-    -------
-    JSONResponse
-        Parsed input and output payloads.
+    Validate a CSV file against provided metadata and return all CSV columns.
     """
     try:
-        metadata_dict = json.loads(metadata_json)
-        metadata = ModelMetadata(metadata_dict)
+        md = json.loads(model_metadata)
+        metadata = ModelMetadata(md)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid metadata JSON: {str(e)}")
+        raise HTTPException(400, f"Invalid metadata JSON: {e}")
 
     try:
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            shutil.copyfileobj(file.file, tmp)
+            shutil.copyfileobj(csv_file.file, tmp)
             tmp_path = Path(tmp.name)
 
         columns = validate_csv_format(metadata, tmp_path)
         return JSONResponse(content={"csv_columns": columns})
+    except ValueError as e:
+        # raised by validate_csv_format for missing columns
+        raise HTTPException(400, str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to process CSV: {str(e)}")
-    
+        raise HTTPException(400, f"Failed to process CSV: {e}")
 
 
 
-@app.post("/evaluate")
+@app.post("/validate-model")
 async def evaluate():
     return {"message": "Model evaluation started"}
-
-
-@app.get("/evaluation_status")
-async def evaluation_status():
-    return {"message": "Evaluation status"}
-
-@app.get("/evaluation_result")
-async def evaluation_result():
-    return {"message": "Evaluation result"}
