@@ -65,7 +65,7 @@ async def validate_csv(
             shutil.copyfileobj(csv_file.file, tmp)
             tmp_path = Path(tmp.name)
 
-        columns = validate_csv_format(metadata, tmp_path)
+        _, columns = validate_csv_format(metadata, tmp_path)
         return JSONResponse(content={"csv_columns": columns})
     except ValueError as e:
         # raised by validate_csv_format for missing columns

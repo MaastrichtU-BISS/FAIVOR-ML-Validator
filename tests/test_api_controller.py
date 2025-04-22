@@ -1,6 +1,4 @@
 from fastapi.testclient import TestClient
-import pytest
-from httpx import AsyncClient
 from pathlib import Path
 import json
 from faivor.api_controller import app
@@ -24,10 +22,11 @@ def test_validate_csv_format(shared_datadir: Path):
     # upload
     with open(csv_path, "rb") as csv_file:
         files = {
-            "metadata_json": (None, metadata_str),
-            "file": ("data.csv", csv_file, "text/csv"),
+            "model_metadata": (None, metadata_str),
+            "csv_file":      ("data.csv", csv_file, "text/csv"),
         }
         response = client.post("/validate-csv/", files=files)
+
 
     assert response.status_code == 200
     data = response.json()

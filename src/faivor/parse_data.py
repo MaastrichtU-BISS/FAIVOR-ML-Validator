@@ -87,7 +87,7 @@ def validate_csv_format(
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
-    return df.columns.tolist()
+    return df, df.columns.tolist()
 
 
 def create_json_payloads(
