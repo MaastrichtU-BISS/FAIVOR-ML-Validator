@@ -82,7 +82,7 @@ def validate_csv_format(
     """
     df = load_csv(csv_path)
 
-    required = [inp["input_label"] for inp in metadata.inputs] + [metadata.output]
+    required = [inp.input_label for inp in metadata.inputs] + [metadata.output]
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
@@ -120,7 +120,7 @@ def create_json_payloads(
     """
     df, all_columns = validate_csv_format(metadata, csv_path)
 
-    input_cols = [inp["input_label"] for inp in metadata.inputs]
+    input_cols = [inp.input_label for inp in metadata.inputs]
     output_col = metadata.output
 
     inputs = df[input_cols].to_dict(orient="records")

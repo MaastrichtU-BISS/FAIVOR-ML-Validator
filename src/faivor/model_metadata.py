@@ -1,6 +1,28 @@
+from dataclasses import dataclass
 import json
 from typing import List, Dict, Any, Optional
 
+@dataclass
+class ModelInput:
+    """
+    Class to represent a model input feature.
+    """
+    input_label: str
+    description: str
+    data_type: str
+    rdfs_label: str
+    def __post_init__(self):
+        """
+        Validate the input feature attributes are strings or None.
+        """
+        if not isinstance(self.input_label, str):
+            raise TypeError("input_label must be a string")
+        if self.description is not None and not isinstance(self.description, str):
+            raise TypeError("description must be a string")
+        if self.data_type is not None and not isinstance(self.data_type, str):
+            raise TypeError("type must be a string")
+        if self.rdfs_label is not None and  not isinstance(self.rdfs_label, str):
+            raise TypeError("rdfs_label must be a string")
 
 class ModelMetadata:
     """
@@ -14,7 +36,7 @@ class ModelMetadata:
         if "General Model Information" not in metadata_json:
             raise ValueError("Missing required 'General Model Information' section in metadata")
     
-        self.inputs: List[Dict[str, Any]] = self._parse_inputs()
+        self.inputs: List[ModelInput] = self._parse_inputs()
         self.output: str = self._parse_output()
         self.output_label: Optional[str] = metadata_json.get("Outcome label", {}).get("@value")
 
@@ -36,23 +58,22 @@ class ModelMetadata:
         required_fields = ["model_name", "inputs", "output"]
         return all(getattr(self, field) for field in required_fields)
     
-    def _parse_inputs(self) -> List[Dict[str, str]]:
+    def _parse_inputs(self) -> List[ModelInput]:
         """
         Extract and normalize input features from the metadata.
         
         Returns:
-            List of dictionaries containing normalized input feature information.
-            Each dictionary includes input_label, description, type, and rdfs_label.
+            List of ModelInput objects containing normalized input feature information.
         """
         
-        inputs: List[Dict[str, str]] = []
+        inputs: List[ModelInput] = []
         for input_feature in self.metadata.get("Input data", []):
-            feature = {
-                "input_label": input_feature.get("Input label", {}).get("@value", ""),
-                "description": input_feature.get("Description", {}).get("@value", ""),
-                "type": input_feature.get("Type of input", {}).get("@value", ""),
-                "rdfs_label": input_feature.get("Input feature", {}).get("rdfs:label", "")
-            }
+            feature = ModelInput(
+                input_label = input_feature.get("Input label", {}).get("@value", ""),
+                description =  input_feature.get("Description", {}).get("@value", ""),
+                data_type = input_feature.get("Type of input", {}).get("@value", ""),
+                rdfs_label = input_feature.get("Input feature", {}).get("rdfs:label", "")
+            )
             inputs.append(feature)
         return inputs
 

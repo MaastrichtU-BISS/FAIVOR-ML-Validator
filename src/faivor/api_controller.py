@@ -1,11 +1,11 @@
-from typing import List
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
-from pathlib import Path
-import tempfile
-import shutil
 import json
+import shutil
+import tempfile
+from pathlib import Path
 
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+# pylint: disable=no-name-in-module
 from pydantic import BaseModel
 
 from faivor.model_metadata import ModelMetadata
@@ -18,8 +18,17 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
+
 class ColumnsResponse(BaseModel):
-    csv_columns: List[str]
+    csv_columns: list[str]
+    model_input_columns: list[str]
+
+
+
+class ModelMetrics(BaseModel):
+    model_name: str
+    metrics: dict[str, float]
+
 
 @app.post(
     "/validate-csv/",
@@ -43,12 +52,11 @@ class ColumnsResponse(BaseModel):
 )
 async def validate_csv(
     model_metadata: str = Form(
-        ..., 
-        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field"
+        ...,
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field",
     ),
     csv_file: UploadFile = File(
-        ..., 
-        description="CSV file to validate; delimiter is auto-detected"
+        ..., description="CSV file to validate; delimiter is auto-detected"
     ),
 ) -> JSONResponse:
     """
@@ -66,7 +74,8 @@ async def validate_csv(
             tmp_path = Path(tmp.name)
 
         _, columns = validate_csv_format(metadata, tmp_path)
-        return JSONResponse(content={"csv_columns": columns})
+
+        return JSONResponse(content={"csv_columns": columns, "model_input_columns": [input_obj.input_label for input_obj in metadata.inputs]})
     except ValueError as e:
         # raised by validate_csv_format for missing columns
         raise HTTPException(400, str(e))
@@ -74,7 +83,26 @@ async def validate_csv(
         raise HTTPException(400, f"Failed to process CSV: {e}")
 
 
-
-@app.post("/validate-model")
-async def evaluate():
+@app.post(
+    "/validate-model",
+    response_model=ModelMetrics,
+    summary="Validate ML model",
+    description=(
+        "Validates the ML model by checking the ML FAIR metadata, pulling the specified docker image and running metrics on the predictions derived from the provided CSV file. The CSV file should contain the same columns as the model metadata inputs as well as the expected predictions. "
+        "Returns the model name and metrics."
+    )
+)
+async def validate_model(
+    model_metadata: str = Form(
+        ...,
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field",
+    ),
+    csv_file: UploadFile = File(
+        ..., description="CSV file to validate; delimiter is auto-detected"
+    ),
+    data_metadata: str = Form(
+        ...,
+        description="Metadata JSON, containing naming ",
+    ),
+) -> JSONResponse:
     return {"message": "Model evaluation started"}

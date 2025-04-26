@@ -38,14 +38,14 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         # validate_csv_format returns df, columns
         df, cols = validate_csv_format(metadata, csv_path)
         # all required present
-        for req in [inp["input_label"] for inp in metadata.inputs] + [metadata.output]:
+        for req in [inp.input_label for inp in metadata.inputs] + [metadata.output]:
             assert req in cols
 
         inputs, outputs = create_json_payloads(metadata, csv_path)
         assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
         assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
         # spot‑check that keys match labels
-        assert set(inputs[0].keys()) == {inp["input_label"] for inp in metadata.inputs}
+        assert set(inputs[0].keys()) == {inp.input_label for inp in metadata.inputs}
         assert set(outputs[0].keys()) == {metadata.output}
 
 
