@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 import pytest
-from faivor.model_metadata import ModelMetadata
+from faivor.model_metadata import ModelInput, ModelMetadata
 from faivor.parse_data import (
     detect_delimiter,
     load_csv,
@@ -55,9 +55,9 @@ def test_validate_csv_format_missing_column(shared_datadir : Path, tmp_path: Pat
     metadata_content = json.loads((shared_datadir / "models" / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
     metadata = ModelMetadata(metadata_content)
     metadata.inputs.clear()
-    metadata.inputs.append({"input_label": "a"})
-    metadata.inputs.append({"input_label": "b"})
-    metadata.output = "c"
+    metadata.inputs.append(ModelInput("a"))
+    metadata.inputs.append(ModelInput("b"))
+    metadata.inputs.append(ModelInput("c"))
     # write CSV with only 'a' and 'c'
     p = tmp_path / "t.csv"
     p.write_text("a,c\n1,2\n3,4\n", encoding="utf-8")

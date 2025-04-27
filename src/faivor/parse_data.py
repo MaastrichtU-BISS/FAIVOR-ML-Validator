@@ -4,6 +4,8 @@ from pathlib import Path
 import csv
 from typing import List, Dict, Any, Tuple
 
+from faivor.model_metadata import ModelMetadata
+
 def detect_delimiter(csv_path: Path) -> str:
     """
     Detect the delimiter used in a CSV file.
@@ -56,7 +58,7 @@ def load_csv(csv_path: Path) -> pd.DataFrame:
 
 
 def validate_csv_format(
-    metadata: Any,
+    metadata: ModelMetadata,
     csv_path: Path
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
@@ -64,7 +66,7 @@ def validate_csv_format(
 
     Parameters
     ----------
-    metadata : Any
+    metadata : ModelMetadata
         Object with `.inputs` (list of dicts with "input_label") and `.output` (str).
     csv_path : Path
         Path to the CSV file.
@@ -91,7 +93,7 @@ def validate_csv_format(
 
 
 def create_json_payloads(
-    metadata: Any,
+    metadata: ModelMetadata,
     csv_path: Path
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
@@ -101,7 +103,7 @@ def create_json_payloads(
 
     Parameters
     ----------
-    metadata : Any
+    metadata : ModelMetadata
         Parsed model metadata with `.inputs` (list of {"input_label": ...})
         and `.output` (str).
     csv_path : Path

@@ -8,20 +8,21 @@ class ModelInput:
     Class to represent a model input feature.
     """
     input_label: str
-    description: str
-    data_type: str
-    rdfs_label: str
+    description: Optional[str] = None
+    data_type: Optional[str] = None
+    rdfs_label: Optional[str] = None
+
     def __post_init__(self):
         """
-        Validate the input feature attributes are strings or None.
+        Validate the input feature attributes.
         """
         if not isinstance(self.input_label, str):
             raise TypeError("input_label must be a string")
         if self.description is not None and not isinstance(self.description, str):
             raise TypeError("description must be a string")
         if self.data_type is not None and not isinstance(self.data_type, str):
-            raise TypeError("type must be a string")
-        if self.rdfs_label is not None and  not isinstance(self.rdfs_label, str):
+            raise TypeError("data_type must be a string")
+        if self.rdfs_label is not None and not isinstance(self.rdfs_label, str):
             raise TypeError("rdfs_label must be a string")
 
 class ModelMetadata:
