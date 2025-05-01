@@ -31,3 +31,4 @@ def test_validate_csv_format(shared_datadir: Path):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data.get("csv_columns"), list)
+    assert isinstance(data.get("model_input_columns"), list)
