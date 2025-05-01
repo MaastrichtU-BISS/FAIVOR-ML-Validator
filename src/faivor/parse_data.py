@@ -28,7 +28,7 @@ def detect_delimiter(csv_path: Path) -> str:
     try:
         with open(csv_path, "r", encoding="utf-8") as f:
             sample = f.read(1024)
-            dialect = csv.Sniffer().sniff(sample, delimiters=";, \t|")
+            dialect = csv.Sniffer().sniff(sample, delimiters=";,\t|")
             return dialect.delimiter
     except (FileNotFoundError, IOError) as e:
         raise IOError(f"Could not open CSV file: {e}") from e
