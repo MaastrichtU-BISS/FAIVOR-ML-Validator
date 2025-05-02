@@ -1,0 +1,79 @@
+{
+    "columns": [
+      {
+        "id": "6a23f880-5c2b-4a61-9a8d-e8648ec5e712",
+        "name": "Idfu",
+        "categorical": false
+      },
+      {
+        "id": "8b72a9f3-4d98-49c2-9b42-7fde6394b6a1",
+        "name": "Gender",
+        "categorical": true
+      },
+      {
+        "id": "f3a67453-61f9-43c1-a8b5-32d70cc96503",
+        "name": "cT",
+        "categorical": true
+      },
+      {
+        "id": "d23bfa56-fb1a-4f8d-85c7-0d89d9e7a34c",
+        "name": "cN",
+        "categorical": true
+      },
+      {
+        "id": "e87c9612-b3a8-4cd7-9e63-fb4a4bc9d25e",
+        "name": "cNplus",
+        "categorical": true
+      },
+      {
+        "id": "a5c43f1d-2e75-48e4-9e0b-9a8f7be14e96",
+        "name": "Age",
+        "categorical": false
+      },
+      {
+        "id": "b6e1d2c3-f894-467a-b92d-3a78fc456701",
+        "name": "TotalDose",
+        "categorical": false
+      },
+      {
+        "id": "c7f2e3d4-0985-478b-ca3e-4b89fd567812",
+        "name": "OK",
+        "categorical": false
+      },
+      {
+        "id": "d8g3f4e5-1a96-489c-db4f-5c9a0e678923",
+        "name": "Ok type",
+        "categorical": false
+      },
+      {
+        "id": "e9h4g5f6-2ba7-49ad-ec50-6dab1f789a34",
+        "name": "pT stage",
+        "categorical": false
+      },
+      {
+        "id": "f10i5h6g7-3cb8-4abe-fd61-7ebc20890b45",
+        "name": "pN stage",
+        "categorical": false
+      },
+      {
+        "id": "g11j6i7h8-4dc9-4bcf-0e72-8fcd319a1c56",
+        "name": "pCR",
+        "categorical": false
+      },
+      {
+        "id": "h12k7j8i9-5eda-4cde-1f83-90de42ab2d67",
+        "name": "TRG",
+        "categorical": false
+      },
+      {
+        "id": "i13l8k9j0-6feb-4def-2g94-a1ef53bc3e78",
+        "name": "WHO",
+        "categorical": false
+      },
+      {
+        "id": "j14m9l0k1-7gfc-4ef0-3ha5-b2f064cd4f89",
+        "name": "tLength",
+        "categorical": false
+      }
+    ]
+  }

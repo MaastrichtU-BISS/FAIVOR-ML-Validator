@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import pytest
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads
 from faivor.run_docker import execute_model
@@ -9,6 +10,9 @@ from faivor.run_docker import execute_model
 from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
 import logging
+from faivor.metrics_api import MetricsCalculator
+from pathlib import Path
+from typing import Dict, Any
 
 model:str = "pilot-model_1"
 
@@ -220,3 +224,123 @@ def test_model_metrics(shared_datadir):
     print(f"\nSuccessfully calculated {len(all_metrics)} metrics")
     
     assert True
+    
+    
+def test_metrics_calculator(shared_datadir):
+    """
+    Test the MetricsCalculator class with a model and its corresponding CSV.
+    """
+    model = "pilot-model_1"
+    model_dir = shared_datadir / "models"
+    model_path = model_dir / model
+    
+    metadata_json = json.loads((model_path / "metadata.json").read_text(encoding="utf-8"))
+    model_metadata = ModelMetadata(metadata_json)
+    
+    # validate metadata
+    assert model_metadata.docker_image, "Docker image name should be provided"
+    assert model_metadata.output, "Output field should be provided in model metadata"
+    
+    csv_path = model_path / "data.csv"
+    inputs, expected_outputs = create_json_payloads(model_metadata, csv_path)
+    
+    # run model, get predictions
+    try:
+        predictions = execute_model(model_metadata, inputs)
+    except Exception as e:
+        pytest.fail(f"Model execution failed: {e}")
+    
+    calculator = MetricsCalculator(
+        model_metadata=model_metadata,
+        predictions=predictions,
+        expected_outputs=expected_outputs,
+        inputs=inputs
+    )
+    
+    # Get categorical features from column metadata
+    column_metadata_path = model_path / "column_metadata.json"
+    categorical_features = calculator.get_categorical_features_from_json(column_metadata_path)
+    
+    # test the prepare_data method
+    y_true, y_pred, valid_indices = calculator.prepare_data()
+    assert len(y_true) > 0, "Should have valid data points"
+    assert len(y_true) == len(y_pred), "True values and predictions should have same length"
+    
+    # test the calculate_metrics method
+    overall_metrics = calculator.calculate_metrics()
+    assert overall_metrics, "Should return metrics dictionary"
+    assert "performance" in str(overall_metrics), "Should contain performance metrics"
+    
+    # test with categorical features from JSON metadata
+    all_metrics = calculator.calculate_all_metrics(csv_path, categorical_features)
+    
+    # check the structure
+    assert "model_info" in all_metrics, "Should contain model info"
+    assert "overall" in all_metrics, "Should contain overall metrics"
+    
+    # check if subgroup analysis was performed for categorical features
+    if "subgroups" in all_metrics:
+        subgroups = all_metrics["subgroups"]
+        for feature in categorical_features:
+            if feature in subgroups and not isinstance(subgroups[feature], dict) or "error" in subgroups.get(feature, {}):
+                print(f"'{feature}' may not be a valid categorical column in the dataset: {subgroups.get(feature)}")
+            else:
+                assert isinstance(subgroups.get(feature, {}), dict), f"Should contain {feature} subgroups"
+                for value, metrics in subgroups.get(feature, {}).items():
+                    assert "sample_size" in metrics, f"Each subgroup should report sample size (group '{value}')"
+                    assert any("performance" in key for key in metrics.keys()), f"Each subgroup should have performance metrics (group '{value}')"
+    
+    # Testing the JSON file output
+    output_path = shared_datadir / "test_metrics_output.json"
+    saved_metrics = calculator.save_metrics_to_json(output_path, csv_path, categorical_features)
+    
+    assert output_path.exists(), "JSON file should be created"
+    
+    # verify saved file
+    loaded_metrics = json.loads(output_path.read_text(encoding="utf-8"))
+    assert loaded_metrics["model_info"]["name"] == model_metadata.model_name, "Saved JSON should contain correct model name"
+    
+    # clean up
+    output_path.unlink(missing_ok=True)
+    
+
+def calculate_all_metrics_from_json(self, csv_path: Path, column_metadata_path: Path) -> Dict[str, Any]:
+    """
+    Calculate all metrics including overall and subgroup metrics using column metadata.
+    
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the CSV file
+    column_metadata_path : Path
+        Path to the column metadata JSON file
+            
+    Returns
+    -------
+    dict
+        Dictionary containing all metrics.
+    """
+    categorical_features = self.get_categorical_features_from_json(column_metadata_path)
+    return self.calculate_all_metrics(csv_path, categorical_features)
+
+def save_metrics_to_json_from_metadata(self, output_path: Path, csv_path: Path, 
+                                     column_metadata_path: Path) -> Dict[str, Any]:
+    """
+    Calculate all metrics and save them to a JSON file using column metadata.
+    
+    Parameters
+    ----------
+    output_path : Path
+        Path to save the JSON file.
+    csv_path : Path
+        Path to the CSV file
+    column_metadata_path : Path
+        Path to the column metadata JSON file
+            
+    Returns
+    -------
+    dict
+        Dictionary containing all metrics.
+    """
+    categorical_features = self.get_categorical_features_from_json(column_metadata_path)
+    return self.save_metrics_to_json(output_path, csv_path, categorical_features)
