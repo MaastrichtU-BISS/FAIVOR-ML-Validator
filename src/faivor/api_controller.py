@@ -7,10 +7,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 # pylint: disable=no-name-in-module
+import pandas as pd
 from pydantic import BaseModel
 
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads, validate_csv_format
+from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
 
 app = FastAPI()
 
@@ -20,15 +21,12 @@ async def root():
     return {"message": "Welcome "}
 
 
-class ColumnsResponse(BaseModel):
+class ValidationResponse(BaseModel):
+    valid: bool
+    message: str | None = None
     csv_columns: list[str]
     model_input_columns: list[str]
 
-
-class ColumnsErrorResponse(BaseModel):
-    message: str
-    csv_columns: list[str]
-    model_input_columns: list[str]
 
 
 class ModelMetrics(BaseModel):
@@ -38,7 +36,7 @@ class ModelMetrics(BaseModel):
 
 @app.post(
     "/validate-csv/",
-    response_model=ColumnsResponse,
+    response_model=ValidationResponse,
     summary="Validate CSV against model metadata",
     description=(
         "Uploads a FAIR model metadata JSON string and a CSV file, "
@@ -47,26 +45,12 @@ class ModelMetrics(BaseModel):
     ),
     responses={
         400: {
-            "description": "Invalid metadata JSON",
+            "description": "Invalid metadata JSON or CSV format",
             "content": {
                 "application/json": {
                     "example": {"message": "Invalid metadata JSON: ..."}
                 }
-            },
-            "model": ColumnsErrorResponse,
-        },
-        409: {
-            "description": "Missing required columns or CSV format issue",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "message": "Missing required columns: foo, bar",
-                        "csv_columns": ["col1", "col2"],
-                        "model_input_columns": ["foo", "bar"],
-                    }
-                }
-            },
-            "model": ColumnsErrorResponse,
+            }
         },
     },
 )
@@ -89,39 +73,22 @@ async def validate_csv(
         raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
 
     try:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            shutil.copyfileobj(csv_file.file, tmp)
-            tmp_path = Path(tmp.name)
+        df_data, columns = load_csv(csv_file)
+    except pd.errors.ParserError as e:
+        raise HTTPException(400, f"Invalid CSV format: {e}") from e
 
-        _, columns = validate_csv_format(metadata, tmp_path)
+    validation_result, msg = validate_dataframe_format(metadata, df_data)
 
-        return JSONResponse(
-            content={
-                "csv_columns": columns,
-                "model_input_columns": [
-                    input_obj.input_label for input_obj in metadata.inputs
-                ],
-            }
-        )
-    except ValueError as e:
-        # raised by validate_csv_format for missing columns
-        raise HTTPException(
-            409,
-            detail={
-                "message": str(e),
-                "csv_columns": columns,
-                "model_input_columns": [
-                    input_obj.input_label for input_obj in metadata.inputs
-                ],
-            },
-        ) from e
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            detail={"message": f"Failed to process CSV: {e}"},
-        ) from e
-
+    return JSONResponse(
+        content={
+            "valid": validation_result,
+            "message": msg,
+            "csv_columns": columns,
+            "model_input_columns": [
+                input_obj.input_label for input_obj in metadata.inputs
+            ],
+        }
+    )
 
 @app.post(
     "/validate-model",

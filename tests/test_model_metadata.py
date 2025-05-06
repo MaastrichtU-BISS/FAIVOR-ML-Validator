@@ -6,7 +6,7 @@ from faivor.model_metadata import ModelInput, ModelMetadata
 from faivor.parse_data import (
     detect_delimiter,
     load_csv,
-    validate_csv_format,
+    validate_dataframe_format,
     create_json_payloads,
 )
 from pathlib import Path
@@ -35,12 +35,6 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         metadata = ModelMetadata(metadata_content)
         csv_path = model_location / "data.csv"
 
-        # validate_csv_format returns df, columns
-        df, cols = validate_csv_format(metadata, csv_path)
-        # all required present
-        for req in [inp.input_label for inp in metadata.inputs] + [metadata.output]:
-            assert req in cols
-
         inputs, outputs = create_json_payloads(metadata, csv_path)
         assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
         assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
@@ -49,8 +43,8 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         assert set(outputs[0].keys()) == {metadata.output}
 
 
-def test_validate_csv_format_missing_column(shared_datadir : Path, tmp_path: Path):
-    """validate_csv_format raises ValueError listing missing columns."""
+def test_validate_dataframe_format_missing_column(shared_datadir: Path):
+    """validate_dataframe_format raises ValueError listing missing columns."""
     # create a minimal metadata expecting 'a','b' inputs and 'c' output
     metadata_content = json.loads((shared_datadir / "models" / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
     metadata = ModelMetadata(metadata_content)
@@ -58,17 +52,16 @@ def test_validate_csv_format_missing_column(shared_datadir : Path, tmp_path: Pat
     metadata.inputs.append(ModelInput("a"))
     metadata.inputs.append(ModelInput("b"))
     metadata.inputs.append(ModelInput("c"))
-    # write CSV with only 'a' and 'c'
-    p = tmp_path / "t.csv"
-    p.write_text("a,c\n1,2\n3,4\n", encoding="utf-8")
+    
+    # create a DataFrame with only 'a' and 'c'
+    df = pd.DataFrame({"a": [1, 3], "c": [2, 4]})
 
-    with pytest.raises(ValueError) as exc:
-        validate_csv_format(metadata, p)
-    msg = str(exc.value)
+    valid, msg = validate_dataframe_format(metadata, df)
+    assert not valid
     assert "Missing required columns" in msg
     assert "b" in msg  # missing input
     # should not mention 'c', since it's present
-    assert "c" not in msg.split(":" )[1]
+    assert "c" not in msg.split(":")[1]
 
 
 @pytest.mark.parametrize("content,expected", [
@@ -83,15 +76,23 @@ def test_detect_delimiter_various(tmp_path: Path, content: str, expected: str):
     p.write_text(content, encoding="utf-8")
     assert detect_delimiter(p) == expected
 
+def test_load_csv(tmp_path: Path):
+    """load_csv should return DataFrame."""
+    content = "foo,bar\n10,20\n"
+    p = tmp_path / "test.csv"
+    p.write_text(content, encoding="utf-8")
+    df, columns = load_csv(p)
+    assert isinstance(df, pd.DataFrame)
+    assert list(columns) == ["foo", "bar"]
 
 def test_load_csv_and_roundtrip(tmp_path: Path):
     """load_csv → DataFrame, then back to CSV yields same columns."""
     content = "foo,bar\n10,20\n"
     p = tmp_path / "test.csv"
     p.write_text(content, encoding="utf-8")
-    df = load_csv(p)
+    df, columns = load_csv(p)
     assert isinstance(df, pd.DataFrame)
-    assert list(df.columns) == ["foo", "bar"]
+    assert list(columns) == ["foo", "bar"]
 
 
 def get_model_paths(shared_datadir: Path) -> List[Path]:
