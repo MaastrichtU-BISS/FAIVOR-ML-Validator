@@ -73,7 +73,11 @@ async def validate_csv(
         raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
 
     try:
-        df_data, columns = load_csv(csv_file)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            shutil.copyfileobj(csv_file.file, tmp)
+            tmp_path = Path(tmp.name)
+
+        df_data, columns = load_csv(tmp_path)
     except pd.errors.ParserError as e:
         raise HTTPException(400, f"Invalid CSV format: {e}") from e
 
