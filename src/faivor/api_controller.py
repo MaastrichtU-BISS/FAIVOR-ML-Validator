@@ -109,7 +109,7 @@ async def validate_csv(
             409,
             detail={
                 "message": str(e),
-                "csv_columns": columns if "columns" in locals() else [],
+                "csv_columns": columns,
                 "model_input_columns": [
                     input_obj.input_label for input_obj in metadata.inputs
                 ],
@@ -145,6 +145,6 @@ async def validate_model(
         description="Metadata JSON, containing naming ",
     ),
 ) -> JSONResponse:
-    inputs, _ = create_json_payloads(model_metadata, csv_file)
+    # inputs, _ = create_json_payloads(model_metadata, csv_file)
     # prediction = execute_model(model_metadata, inputs)
     return {"message": "Model evaluation started"}
