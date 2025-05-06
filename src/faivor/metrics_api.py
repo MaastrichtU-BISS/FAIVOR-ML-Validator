@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Any, Union, Optional, Tuple
+from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
 
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter
@@ -217,6 +218,205 @@ class MetricsCalculator:
                 all_metrics[f"explainability.{metric.regular_name}"] = f"Error: {str(e)}"
                 
         return all_metrics
+    
+    @staticmethod
+    def _safe_divide(numerator, denominator):
+        """
+        Perform division safely by handling division by zero.
+        
+        Parameters
+        ----------
+        numerator : float
+            The numerator value.
+        denominator : float
+            The denominator value.
+        
+        Returns
+        -------
+        float
+            Result of division, or 0 if denominator is 0.
+        """
+        return numerator / denominator if denominator != 0 else 0
+    
+    def preprocess_probability_values(self, y_pred: np.ndarray, verbose: bool = False) -> Tuple[np.ndarray, str]:
+        """
+        Preprocess model outputs to ensure they are valid probabilities in [0,1] range.
+        
+        Parameters
+        ----------
+        y_pred : np.ndarray
+            The prediction values to process
+        verbose : bool, optional
+            Whether to print information about the transformation, by default False
+            
+        Returns
+        -------
+        Tuple[np.ndarray, str]
+            The preprocessed probabilities and a message describing the transformation
+        """
+        min_val = np.min(y_pred)
+        max_val = np.max(y_pred)
+        
+        # check if values are already in valid prob ([0,1]) range
+        if min_val >= 0 and max_val <= 1:
+            return y_pred, "No transformation needed"
+        
+        #### treatment type #1 1: If values look like logits (large range, both positive and negative)
+        if min_val < -1 or max_val > 2:
+            if verbose:
+                print(f"Values range [{min_val:.4f}, {max_val:.4f}] looks like logits, applying sigmoid")
+            transformed = 1 / (1 + np.exp(-y_pred))
+            return transformed, "Applied sigmoid transformation (logits to probabilities)"
+        
+        ### treatment type #2: If values are in a consistent range but shifted/scaled
+        if (max_val - min_val) > 0:
+            if verbose:
+                print(f"Values in range [{min_val:.4f}, {max_val:.4f}], applying min-max scaling")
+            transformed = (y_pred - min_val) / (max_val - min_val)
+            return transformed, "Applied min-max scaling to [0,1] range"
+        
+        ### treatment type #3: Fallback to clipping
+        if verbose:
+            print(f"Values outside [0,1] range, applying clipping")
+        transformed = np.clip(y_pred, 0, 1)
+        return transformed, "Applied clipping to [0,1] range"    
+    
+    def prepare_probability_data(self) -> Tuple[np.ndarray, np.ndarray, List[int], Optional[str]]:
+        """
+        Prepare binary classification data for threshold-based metrics calculation.
+        
+        Returns
+        -------
+        tuple
+            Tuple containing (y_true, y_prob, valid_indices, transformation_message)
+            where y_true contains binary labels (0 or 1),
+            y_prob contains probability predictions for the positive class,
+            valid_indices contains the indices of valid data points,
+            and transformation_message describes any applied transformations.
+        """
+        # get the regular data
+        y_true, y_pred, valid_indices = self.prepare_data()
+        
+        # check whether we have binary classification data (0 or 1)
+        binary_mask = np.isin(y_true, [0, 1])
+        if not np.all(binary_mask):
+            # filter to keep only binary data
+            y_true = y_true[binary_mask]
+            y_pred = y_pred[binary_mask]
+            valid_indices = [valid_indices[i] for i, is_binary in enumerate(binary_mask) if is_binary]
+        
+        # for probability, we'll use the predicted values directly and check if they need preprocessing
+        y_prob, transformation_message = self.preprocess_probability_values(y_pred, verbose=True)
+        
+        return y_true, y_prob, valid_indices, transformation_message
+    
+    def calculate_threshold_metrics(self) -> Dict[str, Any]:
+        """
+        Calculate metrics across different classification thresholds for binary classification.
+        
+        Based on https://www.mdpi.com/2072-4292/13/13/2450.
+        
+        This method analyzes how different probability thresholds affect classification metrics,
+        including precision, recall, F1-score, and confusion matrix components. It also calculates
+        ROC curve and Precision-Recall curve data.
+        
+        Returns
+        -------
+        dict
+            Dictionary containing threshold analysis results including:
+            - ROC curve data (FPR, TPR, thresholds, AUC)
+            - Precision-Recall curve data (precision, recall, thresholds, average precision)
+            - Metrics at different thresholds (confusion matrix, precision, recall, F1, etc.)
+        """
+        
+        # get binary ground truth and probability predictions
+        y_true, y_prob, valid_indices, transformation_message = self.prepare_probability_data()
+        
+        # check for the edge case of zero binary data
+        if len(y_true) == 0:
+            return {"error": "No valid binary data pairs found for threshold analysis"}
+        
+        # double ckeck whether we have binary class labels (0 or 1)
+        if not np.all(np.isin(y_true, [0, 1])):
+            return {"error": "Threshold analysis requires binary ground truth labels (0 or 1)"}
+        
+        # calculate ROC curve
+        try:
+            fpr, tpr, roc_thresholds = roc_curve(y_true, y_prob)
+            auc_score = roc_auc_score(y_true, y_prob)
+            
+            # make serializable
+            roc_curve_data = {
+                "fpr": self._convert_to_json_serializable(fpr),
+                "tpr": self._convert_to_json_serializable(tpr),
+                "thresholds": self._convert_to_json_serializable(roc_thresholds),
+                "auc": float(auc_score)
+            }
+        except Exception as e:
+            roc_curve_data = {"error": f"Could not compute ROC curve: {str(e)}"}
+        
+        # calculate Precision-Recall curve
+        try:
+            precision, recall, pr_thresholds = precision_recall_curve(y_true, y_prob)
+            avg_precision = average_precision_score(y_true, y_prob)
+            
+            # make serializable
+            pr_curve_data = {
+                "precision": self._convert_to_json_serializable(precision),
+                "recall": self._convert_to_json_serializable(recall),
+                "thresholds": self._convert_to_json_serializable(pr_thresholds),
+                "average_precision": float(avg_precision)
+            }
+        except Exception as e:
+            pr_curve_data = {"error": f"Could not compute PR curve: {str(e)}"}
+        
+        # calculate metrics for different thresholds, we'll go with the extreme case of 101 thresholds from 0.00 to 1.00
+        thresholds = np.linspace(0, 1, 101)
+        threshold_metrics = {}
+        
+        for threshold in thresholds:
+            # create binary predictions using this threshold
+            y_pred_binary = (y_prob >= threshold).astype(int)
+            
+            # calculate confusion matrix
+            try:
+                tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
+                
+                # calculate derived metrics
+                accuracy = (tp + tn) / (tp + tn + fp + fn)
+                precision = self._safe_divide(tp, tp + fp)
+                recall = self._safe_divide(tp, tp + fn)
+                specificity = self._safe_divide(tn, tn + fp)
+                f1_score = self._safe_divide(2 * precision * recall, precision + recall)
+                fpr = self._safe_divide(fp, fp + tn)
+                
+                # stash metrics
+                threshold_metrics[str(threshold)] = {
+                    "confusion_matrix": {
+                        "tn": int(tn),
+                        "fp": int(fp),
+                        "fn": int(fn),
+                        "tp": int(tp)
+                    },
+                    "accuracy": float(accuracy),
+                    "precision": float(precision),
+                    "recall": float(recall),
+                    "specificity": float(specificity),
+                    "f1_score": float(f1_score),
+                    "fpr": float(fpr)
+                }
+            except Exception as e:
+                threshold_metrics[str(threshold)] = {"error": f"Error computing metrics: {str(e)}"}
+        
+        # combine
+        results = {
+            "probability_preprocessing": transformation_message,
+            "roc_curve": roc_curve_data,
+            "pr_curve": pr_curve_data,
+            "threshold_metrics": threshold_metrics
+        }
+        
+        return results        
         
     def calculate_subgroup_metrics(self, csv_path: Path, 
                                 categorical_features: List[str]) -> Dict[str, Any]:
@@ -255,7 +455,7 @@ class MetricsCalculator:
         valid_data['y_true'] = y_true
         valid_data['y_pred'] = y_pred
         
-        # ff we have sensitive attribute info, add it to valid_data
+        # if we have sensitive attribute info, add it to valid_data
         sensitive_attribute = self.metadata_json.get("sensitive_attribute")
         has_sensitive_data = False
         
@@ -341,56 +541,88 @@ class MetricsCalculator:
             
         return subgroup_metrics
     
-    def calculate_all_metrics(self, csv_path: Optional[Path] = None, 
-                             categorical_features: Optional[List[str]] = None) -> Dict[str, Any]:
+    def calculate_all_metrics_from_json(self, csv_path: Path, column_metadata_path: Path) -> Dict[str, Any]:
         """
-        Calculate all metrics including overall and subgroup metrics.
+        Calculate all metrics including overall and subgroup metrics using column metadata.
+        Automatically detects if classification outputs are probabilities and calculates threshold metrics.
         
         Parameters
         ----------
-        csv_path : Path, optional
-            Path to the CSV file, by default None
-        categorical_features : List[str], optional
-            List of categorical feature names, by default None
-            
+        csv_path : Path
+            Path to the CSV file
+        column_metadata_path : Path
+            Path to the column metadata JSON file
+                
         Returns
         -------
         dict
             Dictionary containing all metrics.
         """
+        categorical_features = self.get_categorical_features_from_json(column_metadata_path)
+        
+        # TODO: when the metadata is updated, we should be able to get the model type from there and remove default
+        model_type = self.metadata_json.get("model_type", "classification")
+        
+        # calculate basic metrics first
         result = {
             "model_info": {
                 "name": self.model_metadata.model_name,
-                "type": self.metadata_json.get("model_type", "regression")
+                "type": model_type
             },
             "overall": self.calculate_metrics()
         }
         
+        # for classification models, detect if we have probability outputs
+        if model_type.lower() == "classification":
+            # Get the data
+            y_true, y_pred, _ = self.prepare_data()
+            
+            # check if predictions look like probabilities (between 0 and 1)
+            is_prob_output = False
+            if len(y_true) > 0:
+                if np.all((y_pred >= 0) & (y_pred <= 1)):
+                    # And not all values are exactly 0 or 1
+                    if not np.all(np.isin(y_pred, [0, 1])):
+                        is_prob_output = True
+            
+            # ff probability outputs, calculate threshold metrics
+            if is_prob_output:
+                try:
+                    threshold_metrics = self.calculate_threshold_metrics()
+                    if "error" not in threshold_metrics:
+                        result["threshold_metrics"] = threshold_metrics
+                    else:
+                        result["threshold_metrics"] = {"status": "error", "message": threshold_metrics["error"]}
+                except Exception as e:
+                    result["threshold_metrics"] = {"status": "error", "message": f"Failed to calculate threshold metrics: {str(e)}"}
+        
+        # subgroup metrics if we have categorical features
         if csv_path and categorical_features:
             result["subgroups"] = self.calculate_subgroup_metrics(csv_path, categorical_features)
             
         return result
-    
-    def save_metrics_to_json(self, output_path: Path, csv_path: Optional[Path] = None, 
-                            categorical_features: Optional[List[str]] = None) -> Dict[str, Any]:
+
+    def save_metrics_to_json_from_metadata(self, output_path: Path, csv_path: Path, 
+                                        column_metadata_path: Path) -> Dict[str, Any]:
         """
-        Calculate all metrics and save them to a JSON file.
+        Calculate all metrics and save them to a JSON file using column metadata.
+        Automatically handles probability outputs for classification models.
         
         Parameters
         ----------
         output_path : Path
             Path to save the JSON file.
-        csv_path : Path, optional
-            Path to the CSV file, by default None
-        categorical_features : List[str], optional
-            List of categorical feature names, by default None
-            
+        csv_path : Path
+            Path to the CSV file
+        column_metadata_path : Path
+            Path to the column metadata JSON file
+                
         Returns
         -------
         dict
             Dictionary containing all metrics.
         """
-        metrics = self.calculate_all_metrics(csv_path, categorical_features)
+        metrics = self.calculate_all_metrics_from_json(csv_path, column_metadata_path)
         
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
