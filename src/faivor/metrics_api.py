@@ -252,7 +252,7 @@ class MetricsCalculator:
         #### treatment type #1 1: If values look like logits (large range, both positive and negative)
         if min_val < -1 or max_val > 2:
             if verbose:
-                logger.log(f"Values range [{min_val:.4f}, {max_val:.4f}] looks like logits, applying sigmoid")
+                logger.info(f"Values range [{min_val:.4f}, {max_val:.4f}] looks like logits, applying sigmoid")
             transformed = 1 / (1 + np.exp(-y_pred))
             return transformed, "Applied sigmoid transformation (logits to probabilities)"
         
