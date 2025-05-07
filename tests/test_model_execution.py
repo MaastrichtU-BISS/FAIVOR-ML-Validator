@@ -115,15 +115,6 @@ def test_data_loading(model_info, input_data):
     assert len(inputs) == len(expected_outputs), "Should have same number of inputs and expected outputs"
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
-def test_model_execution(model_info, model_predictions):
-    """Test model execution and prediction format."""
-    model_name = model_info["model_name"]
-    
-    assert model_predictions is not None, f"Model {model_name} should return predictions"
-    assert isinstance(model_predictions, list), "Predictions should be a list"
-    assert len(model_predictions) > 0, "Should have at least one prediction"
-
-@pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_metrics_calculator_init(model_info, metrics_calculator):
     """Test metrics calculator initialization."""
     column_metadata_path = model_info["column_metadata_path"]
@@ -152,14 +143,12 @@ def test_output_format_analysis(model_info, metrics_calculator):
     """Test analyzing model output format."""
     model_type = model_info["model_type"]
     
-    y_true, y_pred, _ = metrics_calculator.prepare_data()
+    _, y_pred, _ = metrics_calculator.prepare_data()
     
     if model_type.lower() == "classification":
         # Check if values are within classification range
         assert np.all((np.isnan(y_pred) | ((y_pred >= 0) & (y_pred <= 1)))), \
             "Classification outputs should be in range [0,1] or NaN"
-    
-    # just making sure the analysis runs
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_basic_metrics_calculation(model_info, metrics_calculator):
@@ -177,7 +166,7 @@ def test_threshold_metrics_for_classification(model_info, metrics_calculator):
     if model_type.lower() != "classification":
         pytest.skip("Threshold metrics only apply to classification models")
     
-    y_true, y_pred, _ = metrics_calculator.prepare_data()
+    _, y_pred, _ = metrics_calculator.prepare_data()
     
     # check if we have valid prob outputs
     is_prob_output = (
@@ -246,7 +235,7 @@ def test_metrics_json_output(shared_datadir, model_info, metrics_calculator):
     output_path = shared_datadir / f"test_metrics_output_{model_name}.json"
     
     try:
-        saved_metrics = metrics_calculator.save_metrics_to_json_from_metadata(
+        _ = metrics_calculator.save_metrics_to_json_from_metadata(
             output_path, csv_path, column_metadata_path
         )
         

@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import pandas as pd
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Union, Optional, Tuple
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
@@ -9,7 +10,9 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter
 from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
+from faivor.utils import convert_to_json_serializable, safe_divide
 
+logger = logging.getLogger(__name__)
 
 class MetricsCalculator:
     """
@@ -105,31 +108,6 @@ class MetricsCalculator:
             return np.array(sensitive_values)
         return None
     
-    @staticmethod
-    def _convert_to_json_serializable(obj: Any) -> Any:
-        """
-        Convert NumPy and other non-serializable objects to JSON serializable types.
-        
-        Parameters
-        ----------
-        obj : Any
-            Object to convert
-            
-        Returns
-        -------
-        Any
-            JSON serializable object
-        """
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif hasattr(obj, 'tolist'):
-            return obj.tolist()
-        return obj
-    
     def get_categorical_features_from_json(self, json_path: Path) -> List[str]:
         """
         Read a JSON file that describes column metadata and extract categorical column names.
@@ -154,6 +132,54 @@ class MetricsCalculator:
         
         return categorical_columns    
     
+    def _compute_metrics_for_category(self, metrics_collection, category_name, y_true, y_pred, 
+                                    all_metrics, sensitive_values=None, feature_importance=None):
+        """
+        Helper method to compute metrics for a specific category.
+        
+        Parameters
+        ----------
+        metrics_collection : list
+            Collection of metric objects to compute
+        category_name : str
+            Name of metric category (performance, fairness, explainability)
+        y_true : np.ndarray
+            Ground truth values
+        y_pred : np.ndarray
+            Predicted values
+        all_metrics : dict
+            Dictionary to store results
+        sensitive_values : np.ndarray, optional
+            Sensitive attribute values for fairness metrics
+        feature_importance : dict, optional
+            Feature importance values for explainability metrics
+        """
+        for metric in metrics_collection:
+            try:
+                # special case for demographic parity ratio (fairness)
+                if metric.function_name == "demographic_parity_ratio":
+                    if sensitive_values is not None:
+                        result = metric.compute(y_true, y_pred, sensitive_values)
+                        all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                    else:
+                        all_metrics[f"{category_name}.{metric.regular_name}"] = "Requires sensitive attributes (not computed)"
+                    continue
+                    
+                # special case for feature importance ratio (explainability)
+                if metric.function_name == "feature_importance_ratio":
+                    if feature_importance:
+                        result = metric.compute(y_true, y_pred, feature_importance=feature_importance)
+                        all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                    else:
+                        all_metrics[f"{category_name}.{metric.regular_name}"] = "Requires feature importances (not computed)"
+                    continue
+                    
+                # general case, compute metric with just ytrue and ypred
+                result = metric.compute(y_true, y_pred)
+                all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+            except Exception as e:
+                all_metrics[f"{category_name}.{metric.regular_name}"] = f"Error: {str(e)}"    
+    
     def calculate_metrics(self) -> Dict[str, Any]:
         """
         Calculate metrics for the model.
@@ -170,7 +196,7 @@ class MetricsCalculator:
             
         model_type = self.metadata_json.get("model_type", "regression")
         
-        # sensitive attribute - TODO:need to be mentiuoned in the schema --- from frontend, not fairmodels
+        # sensitive attribute
         sensitive_values = self.get_sensitive_values(valid_indices)
         feature_importance = self.metadata_json.get("feature_importance")
         
@@ -178,66 +204,28 @@ class MetricsCalculator:
         
         # detect appropriate metrics module based on model type
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
-                         else regression_metrics)
+                        else regression_metrics)
         
-        for metric in metrics_module.performance:
-            try:
-                result = metric.compute(y_true, y_pred)
-                all_metrics[f"performance.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-            except Exception as e:
-                all_metrics[f"performance.{metric.regular_name}"] = f"Error: {str(e)}"
+        # calc metrics for each category
+        self._compute_metrics_for_category(
+            metrics_module.performance, "performance", 
+            y_true, y_pred, all_metrics
+        )
         
-        for metric in metrics_module.fairness:
-            try:
-                if metric.function_name == "demographic_parity_ratio":
-                    if sensitive_values is not None:
-                        result = metric.compute(y_true, y_pred, sensitive_values)
-                        all_metrics[f"fairness.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                    else:
-                        all_metrics[f"fairness.{metric.regular_name}"] = "Requires sensitive attributes (not computed)"
-                    continue
-                    
-                result = metric.compute(y_true, y_pred)
-                all_metrics[f"fairness.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-            except Exception as e:
-                all_metrics[f"fairness.{metric.regular_name}"] = f"Error: {str(e)}"
+        self._compute_metrics_for_category(
+            metrics_module.fairness, "fairness", 
+            y_true, y_pred, all_metrics, 
+            sensitive_values=sensitive_values
+        )
         
-        for metric in metrics_module.explainability:
-            try:
-                if metric.function_name == "feature_importance_ratio":
-                    if feature_importance:
-                        result = metric.compute(y_true, y_pred, feature_importance=feature_importance)
-                        all_metrics[f"explainability.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                    else:
-                        all_metrics[f"explainability.{metric.regular_name}"] = "Requires feature importances (not computed)"
-                    continue
-                    
-                result = metric.compute(y_true, y_pred)
-                all_metrics[f"explainability.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-            except Exception as e:
-                all_metrics[f"explainability.{metric.regular_name}"] = f"Error: {str(e)}"
+        self._compute_metrics_for_category(
+            metrics_module.explainability, "explainability", 
+            y_true, y_pred, all_metrics, 
+            feature_importance=feature_importance
+        )
                 
-        return all_metrics
-    
-    @staticmethod
-    def _safe_divide(numerator, denominator):
-        """
-        Perform division safely by handling division by zero.
-        
-        Parameters
-        ----------
-        numerator : float
-            The numerator value.
-        denominator : float
-            The denominator value.
-        
-        Returns
-        -------
-        float
-            Result of division, or 0 if denominator is 0.
-        """
-        return numerator / denominator if denominator != 0 else 0
-    
+        return all_metrics    
+
     def preprocess_probability_values(self, y_pred: np.ndarray, verbose: bool = False) -> Tuple[np.ndarray, str]:
         """
         Preprocess model outputs to ensure they are valid probabilities in [0,1] range.
@@ -264,20 +252,20 @@ class MetricsCalculator:
         #### treatment type #1 1: If values look like logits (large range, both positive and negative)
         if min_val < -1 or max_val > 2:
             if verbose:
-                print(f"Values range [{min_val:.4f}, {max_val:.4f}] looks like logits, applying sigmoid")
+                logger.log(f"Values range [{min_val:.4f}, {max_val:.4f}] looks like logits, applying sigmoid")
             transformed = 1 / (1 + np.exp(-y_pred))
             return transformed, "Applied sigmoid transformation (logits to probabilities)"
         
         ### treatment type #2: If values are in a consistent range but shifted/scaled
         if (max_val - min_val) > 0:
             if verbose:
-                print(f"Values in range [{min_val:.4f}, {max_val:.4f}], applying min-max scaling")
+                logger.log(f"Values in range [{min_val:.4f}, {max_val:.4f}], applying min-max scaling")
             transformed = (y_pred - min_val) / (max_val - min_val)
             return transformed, "Applied min-max scaling to [0,1] range"
         
         ### treatment type #3: Fallback to clipping
         if verbose:
-            print(f"Values outside [0,1] range, applying clipping")
+            logger.log(f"Values outside [0,1] range, applying clipping")
         transformed = np.clip(y_pred, 0, 1)
         return transformed, "Applied clipping to [0,1] range"    
     
@@ -347,9 +335,9 @@ class MetricsCalculator:
             
             # make serializable
             roc_curve_data = {
-                "fpr": self._convert_to_json_serializable(fpr),
-                "tpr": self._convert_to_json_serializable(tpr),
-                "thresholds": self._convert_to_json_serializable(roc_thresholds),
+                "fpr": convert_to_json_serializable(fpr),
+                "tpr": convert_to_json_serializable(tpr),
+                "thresholds": convert_to_json_serializable(roc_thresholds),
                 "auc": float(auc_score)
             }
         except Exception as e:
@@ -362,9 +350,9 @@ class MetricsCalculator:
             
             # make serializable
             pr_curve_data = {
-                "precision": self._convert_to_json_serializable(precision),
-                "recall": self._convert_to_json_serializable(recall),
-                "thresholds": self._convert_to_json_serializable(pr_thresholds),
+                "precision": convert_to_json_serializable(precision),
+                "recall": convert_to_json_serializable(recall),
+                "thresholds": convert_to_json_serializable(pr_thresholds),
                 "average_precision": float(avg_precision)
             }
         except Exception as e:
@@ -384,11 +372,11 @@ class MetricsCalculator:
                 
                 # calculate derived metrics
                 accuracy = (tp + tn) / (tp + tn + fp + fn)
-                precision = self._safe_divide(tp, tp + fp)
-                recall = self._safe_divide(tp, tp + fn)
-                specificity = self._safe_divide(tn, tn + fp)
-                f1_score = self._safe_divide(2 * precision * recall, precision + recall)
-                fpr = self._safe_divide(fp, fp + tn)
+                precision = safe_divide(tp, tp + fp)
+                recall = safe_divide(tp, tp + fn)
+                specificity = safe_divide(tn, tn + fp)
+                f1_score = safe_divide(2 * precision * recall, precision + recall)
+                fpr = safe_divide(fp, fp + tn)
                 
                 # stash metrics
                 threshold_metrics[str(threshold)] = {
@@ -482,10 +470,10 @@ class MetricsCalculator:
             feature_metrics = {}
             
             for value in feature_values:
-                # filter data for this subgroup - refactored from lambda function for readability
+                # filter data for this subgroup
                 subgroup_data = valid_data[valid_data[feature] == value]
                 
-                # important to skip if no data in this subgroup, e.g. empty or nan or invalid values
+                # skip if no data in this subgroup
                 if len(subgroup_data) == 0:
                     continue
                     
@@ -495,48 +483,27 @@ class MetricsCalculator:
                 subgroup_sensitive = subgroup_data['sensitive_attr'].values if has_sensitive_data else None
                 
                 subgroup_all_metrics = {
-                    "sample_size": len(subgroup_y_true)  # Include sample size for context
+                    "sample_size": len(subgroup_y_true)  # include sample size for context
                 }
                 
-                for metric in metrics_module.performance:
-                    try:
-                        result = metric.compute(subgroup_y_true, subgroup_y_pred)
-                        subgroup_all_metrics[f"performance.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                    except Exception as e:
-                        subgroup_all_metrics[f"performance.{metric.regular_name}"] = f"Error: {str(e)}"
+                self._compute_metrics_for_category(
+                    metrics_module.performance, "performance", 
+                    subgroup_y_true, subgroup_y_pred, subgroup_all_metrics
+                )
                 
-                for metric in metrics_module.fairness:
-                    try:
-                        if metric.function_name == "demographic_parity_ratio":
-                            if subgroup_sensitive is not None:
-                                result = metric.compute(subgroup_y_true, subgroup_y_pred, subgroup_sensitive)
-                                subgroup_all_metrics[f"fairness.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                            else:
-                                subgroup_all_metrics[f"fairness.{metric.regular_name}"] = "Requires sensitive attributes (not computed)"
-                            continue
-                            
-                        result = metric.compute(subgroup_y_true, subgroup_y_pred)
-                        subgroup_all_metrics[f"fairness.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                    except Exception as e:
-                        subgroup_all_metrics[f"fairness.{metric.regular_name}"] = f"Error: {str(e)}"
+                self._compute_metrics_for_category(
+                    metrics_module.fairness, "fairness", 
+                    subgroup_y_true, subgroup_y_pred, subgroup_all_metrics,
+                    sensitive_values=subgroup_sensitive
+                )
                 
-                for metric in metrics_module.explainability:
-                    try:
-                        if metric.function_name == "feature_importance_ratio":
-                            if feature_importance:
-                                result = metric.compute(subgroup_y_true, subgroup_y_pred, feature_importance=feature_importance)
-                                subgroup_all_metrics[f"explainability.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                            else:
-                                subgroup_all_metrics[f"explainability.{metric.regular_name}"] = "Requires feature importances (not computed)"
-                            continue
-                            
-                        result = metric.compute(subgroup_y_true, subgroup_y_pred)
-                        subgroup_all_metrics[f"explainability.{metric.regular_name}"] = self._convert_to_json_serializable(result)
-                    except Exception as e:
-                        subgroup_all_metrics[f"explainability.{metric.regular_name}"] = f"Error: {str(e)}"
+                self._compute_metrics_for_category(
+                    metrics_module.explainability, "explainability", 
+                    subgroup_y_true, subgroup_y_pred, subgroup_all_metrics,
+                    feature_importance=feature_importance
+                )
                 
-                feature_metrics[str(value)] = subgroup_all_metrics
-                
+                feature_metrics[str(value)] = subgroup_all_metrics                
             subgroup_metrics[feature] = feature_metrics
             
         return subgroup_metrics
