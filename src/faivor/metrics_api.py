@@ -259,7 +259,7 @@ class MetricsCalculator:
         ### treatment type #2: If values are in a consistent range but shifted/scaled
         if (max_val - min_val) > 0:
             if verbose:
-                logger.log(f"Values in range [{min_val:.4f}, {max_val:.4f}], applying min-max scaling")
+                logger.info(f"Values in range [{min_val:.4f}, {max_val:.4f}], applying min-max scaling")
             transformed = (y_pred - min_val) / (max_val - min_val)
             return transformed, "Applied min-max scaling to [0,1] range"
         
