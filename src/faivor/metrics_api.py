@@ -265,7 +265,7 @@ class MetricsCalculator:
         
         ### treatment type #3: Fallback to clipping
         if verbose:
-            logger.log(f"Values outside [0,1] range, applying clipping")
+            logger.info(f"Values outside [0,1] range, applying clipping")
         transformed = np.clip(y_pred, 0, 1)
         return transformed, "Applied clipping to [0,1] range"    
     
