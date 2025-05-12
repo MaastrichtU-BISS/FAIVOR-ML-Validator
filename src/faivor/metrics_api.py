@@ -69,8 +69,6 @@ class MetricsCalculator:
                     valid_indices.append(i)
                     y_true_values.append(true_float)
                     y_pred_values.append(pred_float)
-                else:
-                    continue
             except (ValueError, TypeError):
                 continue
         
