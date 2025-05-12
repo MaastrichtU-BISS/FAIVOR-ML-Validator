@@ -60,15 +60,13 @@ class MetricsCalculator:
                 # need to check if expected output has the required key and is numeric
                 if isinstance(output, dict) and self.output_field in output:
                     true_val = output[self.output_field]
-                    if true_val in ('x', 'X', ''):
-                        continue
-                    
-                    true_float = float(true_val)
-                    pred_float = float(pred)
-                    
-                    valid_indices.append(i)
-                    y_true_values.append(true_float)
-                    y_pred_values.append(pred_float)
+                    if true_val not in ('x', 'X', ''):
+                        true_float = float(true_val)
+                        pred_float = float(pred)
+                        
+                        valid_indices.append(i)
+                        y_true_values.append(true_float)
+                        y_pred_values.append(pred_float)
             except (ValueError, TypeError):
                 continue
         
