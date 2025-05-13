@@ -17,7 +17,6 @@ from faivor.parse_data import create_json_payloads
 from faivor.run_docker import execute_model
 from faivor.metrics_api import MetricsCalculator
 
-model:str = "pilot-model_1"
 MODEL_NAMES = ["pilot-model_1"]
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
