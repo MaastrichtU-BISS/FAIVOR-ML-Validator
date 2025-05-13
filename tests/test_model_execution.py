@@ -19,6 +19,7 @@ from faivor.metrics_api import MetricsCalculator
 
 MODEL_NAMES = ["pilot-model_1"]
 
+
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_model_execution(shared_datadir, model_name):
     model_dir = shared_datadir / "models"

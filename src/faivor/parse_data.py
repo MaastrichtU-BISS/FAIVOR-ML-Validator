@@ -4,6 +4,8 @@ from pathlib import Path
 import csv
 from typing import List, Dict, Any, Tuple
 
+from faivor.model_metadata import ModelMetadata
+
 def detect_delimiter(csv_path: Path) -> str:
     """
     Detect the delimiter used in a CSV file.
@@ -16,42 +18,116 @@ def detect_delimiter(csv_path: Path) -> str:
     Returns
     -------
     str
-        The detected delimiter (either ';' or ',').
+        The detected delimiter (comma, semicolon, tab, or pipe).
+
+    Raises
+    ------
+    IOError
+        If the file cannot be opened.
     """
     try:
-        with open(csv_path, "r", encoding="utf-8") as file:
-            sample = file.read(1024)  # Read a sample of the file
-            dialect = csv.Sniffer().sniff(sample, delimiters=";,\t|") #comma, semicolon, tab for tsv
+        with open(csv_path, "r", encoding="utf-8") as f:
+            sample = f.read(1024)
+            dialect = csv.Sniffer().sniff(sample, delimiters=";,\t|")
             return dialect.delimiter
     except (FileNotFoundError, IOError) as e:
-        raise IOError(f"Could not open CSV file: {e}")
+        raise IOError(f"Could not open CSV file: {e}") from e
+    
 
-
-def create_json_payloads(metadata: Any, csv_path: Path) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def load_csv(csv_path: Path) -> tuple[pd.DataFrame, List[str]]:
     """
-    Create JSON payloads for input and output data based on provided metadata and CSV file.
+    Load a CSV file into a DataFrame using the detected delimiter.
+
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the CSV file.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, List[str]]
+        - df: the loaded DataFrame
+        - columns: list of all column names in the CSV
+
+    Raises
+    ------
+    pd.errors.ParserError
+        If the CSV cannot be parsed.
+    """
+    delimiter = detect_delimiter(csv_path)
+    df = pd.read_csv(csv_path, sep=delimiter)
+    return df, df.columns.tolist()
+
+
+def validate_dataframe_format(
+    metadata: ModelMetadata,
+    csv_df: pd.DataFrame
+) -> tuple[bool, str | None]:
+    """
+    Validate that all required input and output columns exist in the CSV.
 
     Parameters
     ----------
     metadata : ModelMetadata
-        Parsed model metadata object containing input/output columns information.
+        Object with `.inputs` (list of input_label) and `.output` (str).
+    csv_df : pd.DataFrame
+        DataFrame containing the CSV data.
+
+    Returns
+    -------
+    tuple[bool, str | None]
+        (True, None) if all required columns are present,
+        (False, message) otherwise.
+    """
+
+    required = [inp.input_label for inp in metadata.inputs] + [metadata.output]
+    missing = [col for col in required if col not in csv_df.columns]
+
+    if missing:
+        return False, f"Missing required columns: {', '.join(missing)}"
+
+    return True, None
+
+
+def create_json_payloads(
+    metadata: ModelMetadata,
+    csv_path: Path
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Create JSON payloads for input and output data based on provided metadata and CSV file.
+
+    This function reuses `validate_dataframe_format` to ensure the CSV is valid before extracting payloads.
+
+    Parameters
+    ----------
+    metadata : ModelMetadata
+        Parsed model metadata with `.inputs` (list of {"input_label": ...})
+        and `.output` (str).
     csv_path : Path
-        Path to the CSV file containing data to be parsed.
+        Path to the CSV file.
 
     Returns
     -------
     Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]
-        A tuple containing two elements:
-        - inputs: List of dictionaries with input data for the model.
-        - outputs: List of dictionaries containing the output values.
+        - inputs: list of dicts for model inputs
+        - outputs: list of dicts for model outputs
+
+    Raises
+    ------
+    ValueError
+        If the CSV is missing required columns (propagated from `validate_csv_format`).
     """
-    delimiter = detect_delimiter(csv_path)
-    df = pd.read_csv(csv_path, sep=delimiter)
 
-    input_columns = [input_feature["input_label"] for input_feature in metadata.inputs]
-    output_column = metadata.output
+    df, all_columns = load_csv(csv_path)
+    is_valid, message = validate_dataframe_format(metadata, df)
 
-    inputs = df[input_columns].to_dict(orient="records")
-    outputs = df[[output_column]].to_dict(orient="records")
+    if not is_valid:
+        raise ValueError(f"CSV format validation failed: {message}")
+
+    input_cols = [inp.input_label for inp in metadata.inputs]
+    output_col = metadata.output
+
+    inputs = df[input_cols].to_dict(orient="records")
+    outputs = df[[output_col]].to_dict(orient="records")
 
     return inputs, outputs
