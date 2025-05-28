@@ -26,7 +26,6 @@ scikit-learn = "^1.5.2"
 uvicorn = "^0.31.1"
 httpx = "^0.28.1"
 docker = "^7.1.0"
-tornado = "^6.5"
 python-multipart = "^0.0.20"
 torch = { version = "2.6.0+cpu", source = "pytorch-cpu" }
 
