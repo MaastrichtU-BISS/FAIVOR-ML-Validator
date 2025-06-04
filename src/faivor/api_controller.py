@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # pylint: disable=no-name-in-module
@@ -14,6 +15,15 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
 
 app = FastAPI()
+
+# Add CORS middleware to allow requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
