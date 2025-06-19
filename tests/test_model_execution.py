@@ -4,7 +4,7 @@ import pytest
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads
 from faivor.run_docker import execute_model
-from faivor.metrics_api import MetricsCalculator
+from faivor.calculate_metrics import MetricsCalculator
 
 
 MODEL_NAMES = ["pilot-model_1"]
@@ -75,12 +75,12 @@ def model_predictions(model_info, input_data):
         pytest.fail(f"Model execution failed for {model_name}: {e}")
 
 @pytest.fixture
-def metrics_calculator(model_info, input_data, model_predictions):
+def metrics_calculator(model_info, input_data, model_predictions) -> MetricsCalculator:
     """Fixture to provide configured metrics calculator."""
     model_metadata = model_info["model_metadata"]
     inputs, expected_outputs = input_data
     
-    calculator = MetricsCalculator(
+    calculator : MetricsCalculator = MetricsCalculator(
         model_metadata=model_metadata,
         predictions=model_predictions,
         expected_outputs=expected_outputs,

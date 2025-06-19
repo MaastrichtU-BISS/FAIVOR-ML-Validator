@@ -11,8 +11,10 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 from pydantic import BaseModel
 
+from faivor.calculate_metrics import MetricsCalculator
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
+from faivor.run_docker import execute_model
 
 app = FastAPI()
 
@@ -109,7 +111,9 @@ async def validate_csv(
     response_model=ModelMetrics,
     summary="Validate ML model",
     description=(
-        "Validates the ML model by checking the ML FAIR metadata, pulling the specified docker image and running metrics on the predictions derived from the provided CSV file. The CSV file should contain the same columns as the model metadata inputs as well as the expected predictions. "
+        "Validates the ML model by checking the ML FAIR metadata, pulling the specified docker image, "
+        "and running metrics on the predictions derived from the provided CSV file. "
+        "The CSV file should contain the same columns as the model metadata inputs as well as the expected predictions. "
         "Returns the model name and metrics."
     ),
 )
@@ -130,9 +134,10 @@ async def validate_model(
     Validate a model with metadata and CSV data.
     """
     try:
-        # Parse the model metadata to extract model name
+        # Parse the model metadata
         md = json.loads(model_metadata)
-        model_name = md.get('model_name', md.get('name', 'unknown_model'))
+        metadata = ModelMetadata(md)
+        model_name = metadata.model_name or "unknown_model"
 
         # Parse data metadata if provided
         try:
@@ -140,19 +145,51 @@ async def validate_model(
         except json.JSONDecodeError:
             data_md = {}
 
-        # TODO: Implement actual model validation logic
-        # For now, return a basic response with placeholder metrics
-        # inputs, _ = create_json_payloads(model_metadata, csv_file)
-        # prediction = execute_model(model_metadata, inputs)
+        # Load CSV data
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            shutil.copyfileobj(csv_file.file, tmp)
+            tmp_path = Path(tmp.name)
 
-        # Return proper response format matching ModelMetrics schema
+        df_data, _ = load_csv(tmp_path)
+
+        # Prepare inputs and expected outputs
+        inputs, expected_outputs = create_json_payloads(metadata, tmp_path)
+
+        # Execute model and get predictions
+        try:
+            predictions = execute_model(metadata, inputs)
+        except Exception as e:
+            raise HTTPException(500, f"Model execution failed: {e}") from e
+
+        # Initialize MetricsCalculator
+        metrics_calculator = MetricsCalculator(
+            model_metadata=metadata,
+            predictions=predictions,
+            expected_outputs=expected_outputs,
+            inputs=inputs,
+        )
+
+        # Calculate metrics
+        overall_metrics = metrics_calculator.calculate_metrics()
+
+        # Calculate threshold metrics (if applicable)
+        threshold_metrics = {}
+        if metadata.metadata.get("model_type", "").lower() == "classification":
+            try:
+                threshold_metrics = metrics_calculator.calculate_threshold_metrics()
+            except Exception as e:
+                threshold_metrics = {"status": "error", "message": f"Failed to calculate threshold metrics: {e}"}
+
+        # Combine results
+        metrics = {
+            "overall_metrics": overall_metrics,
+            "threshold_metrics": threshold_metrics,
+        }
+
         return JSONResponse(
             content={
                 "model_name": model_name,
-                "metrics": {
-                    "validation_status": 1.0,
-                    "data_processed": 1.0
-                }
+                "metrics": metrics,
             }
         )
 
