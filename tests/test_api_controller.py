@@ -1,7 +1,11 @@
 from fastapi.testclient import TestClient
 from pathlib import Path
 import json
+
+import pytest
 from faivor.api_controller import app
+
+MODEL_NAMES = ["pilot-model_1", "pilot-model_2"]
 
 client = TestClient(app)
 
@@ -10,10 +14,11 @@ def test_root():
     assert response.status_code == 200
 
 
-def test_validate_csv_format(shared_datadir: Path):
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_validate_csv_format(shared_datadir: Path, model_name: str):
     model_dir = shared_datadir / "models"
-    metadata_path = model_dir / "pilot-model_1" / "metadata.json"
-    csv_path = model_dir / "pilot-model_1" / "data.csv"
+    metadata_path = model_dir / model_name / "metadata.json"
+    csv_path = model_dir / model_name / "data.csv"
 
     # load and stringify metadata
     metadata_dict = json.load(open(metadata_path))

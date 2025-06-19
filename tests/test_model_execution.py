@@ -4,18 +4,8 @@ import pytest
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads
 from faivor.run_docker import execute_model
-from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads
-from faivor.run_docker import execute_model
 from faivor.metrics_api import MetricsCalculator
-import pytest
-import json
-import numpy as np
 
-from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads
-from faivor.run_docker import execute_model
-from faivor.metrics_api import MetricsCalculator
 
 MODEL_NAMES = ["pilot-model_1"]
 
