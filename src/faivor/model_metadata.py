@@ -68,7 +68,9 @@ class ModelMetadata:
         """
         
         inputs: List[ModelInput] = []
-        for input_feature in self.metadata.get("Input data", []):
+        # prefer "Input data", fallback to "Input data1"
+        inputs_data = self.metadata.get("Input data") or self.metadata.get("Input data1") or []
+        for input_feature in inputs_data:
             feature = ModelInput(
                 input_label = input_feature.get("Input label", {}).get("@value", ""),
                 description =  input_feature.get("Description", {}).get("@value", ""),
