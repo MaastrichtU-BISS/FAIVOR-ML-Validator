@@ -127,7 +127,7 @@ async def validate_model(
     ),
     data_metadata: str = Form(
         ...,
-        description="Metadata JSON, containing naming ",
+        description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not. ",
     ),
 ) -> JSONResponse:
     """
