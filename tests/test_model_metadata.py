@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import List
 
 
+MODEL_NAMES = ["pilot-model_1", "pilot-model_2"]
 
 def test_model_metadata_creation(shared_datadir: Path):
     """ModelMetadata must populate all required fields."""
@@ -43,10 +44,11 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         assert set(outputs[0].keys()) == {metadata.output}
 
 
-def test_validate_dataframe_format_missing_column(shared_datadir: Path):
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_validate_dataframe_format_missing_column(shared_datadir: Path, model_name: str):
     """validate_dataframe_format raises ValueError listing missing columns."""
     # create a minimal metadata expecting 'a','b' inputs and 'c' output
-    metadata_content = json.loads((shared_datadir / "models" / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
+    metadata_content = json.loads((shared_datadir / "models" / model_name / "metadata.json").read_text(encoding="utf-8"))
     metadata = ModelMetadata(metadata_content)
     metadata.inputs.clear()
     metadata.inputs.append(ModelInput("a"))
@@ -98,6 +100,4 @@ def test_load_csv_and_roundtrip(tmp_path: Path):
 def get_model_paths(shared_datadir: Path) -> List[Path]:
     """Retrieve model paths from shared data directory."""
     model_dir = shared_datadir / "models"
-    # Return only the first model
-    # return [model_dir / "pilot-model_1"]
     return [model_dir / subdir for subdir in model_dir.iterdir() if subdir.is_dir()]
