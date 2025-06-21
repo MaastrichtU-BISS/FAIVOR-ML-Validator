@@ -12,6 +12,8 @@ import pandas as pd
 from pydantic import BaseModel
 
 from faivor.calculate_metrics import MetricsCalculator
+from faivor.metrics.classification import classification_metrics
+from faivor.metrics.regression import regression_metrics
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
 from faivor.run_docker import execute_model
@@ -40,12 +42,6 @@ class ValidationResponse(BaseModel):
     model_input_columns: list[str]
 
 
-
-class ModelMetrics(BaseModel):
-    model_name: str
-    metrics: dict[str, float]
-
-
 @app.post(
     "/validate-csv/",
     response_model=ValidationResponse,
@@ -62,7 +58,7 @@ class ModelMetrics(BaseModel):
                 "application/json": {
                     "example": {"message": "Invalid metadata JSON: ..."}
                 }
-            }
+            },
         },
     },
 )
@@ -105,6 +101,77 @@ async def validate_csv(
             ],
         }
     )
+
+
+class MetricDescription(BaseModel):
+    name: str
+    description: str
+    type: str
+
+
+@app.post(
+    "/retrieve-metrics",
+    response_model=list[MetricDescription],
+    summary="Retrieve applicable metrics for the model",
+    description=(
+        "Returns a list of MetricDescription objects containing the names and descriptions "
+        "of metrics applicable to the model based on the provided FAIR model metadata. "
+        "Optionally filter by category (`performance`, `fairness`, `explainability`)."
+    ),
+)
+async def retrieve_metrics(
+    model_metadata: str = Form(
+        ...,
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field",
+    ),
+) -> list[MetricDescription]:
+    """
+    Retrieve applicable metrics for the model.
+    """
+    try:
+        # Parse the model metadata
+        md = json.loads(model_metadata)
+        metadata = ModelMetadata(md)
+        model_type = metadata.metadata.get("model_type", "regression").lower()
+
+        # detect appropriate metrics module based on model type
+        metrics_module = (classification_metrics if model_type.lower() == "classification" 
+                        else regression_metrics)
+
+        # Collect metrics
+        performance_metrics = [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "performance"
+                )
+                for metric in metrics_module.PERFORMANCE_METRICS
+            ]
+        fairness_metrics = [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "fairness"
+                )
+                for metric in metrics_module.FAIRNESS_METRICS
+            ]
+        explainability_metrics= [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "explainability"
+                )
+                for metric in metrics_module.EXPLAINABILITY_METRICS
+            ]
+
+
+        # Return all metrics as a flat list
+        return performance_metrics + fairness_metrics + explainability_metrics
+
+    except json.JSONDecodeError as e:
+        raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
+    except Exception as e:
+        raise HTTPException(500, f"Failed to retrieve metrics: {e}") from e
+
+
+class ModelMetrics(BaseModel):
+    model_name: str
+    metrics: dict[str, float]
+
 
 @app.post(
     "/validate-model",
@@ -178,7 +245,10 @@ async def validate_model(
             try:
                 threshold_metrics = metrics_calculator.calculate_threshold_metrics()
             except Exception as e:
-                threshold_metrics = {"status": "error", "message": f"Failed to calculate threshold metrics: {e}"}
+                threshold_metrics = {
+                    "status": "error",
+                    "message": f"Failed to calculate threshold metrics: {e}",
+                }
 
         # Combine results
         metrics = {

@@ -38,6 +38,33 @@ def test_validate_csv_format(shared_datadir: Path, model_name: str):
     assert isinstance(data.get("csv_columns"), list)
     assert isinstance(data.get("model_input_columns"), list)
 
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_retrieve_metrics(shared_datadir: Path, model_name: str):
+    """
+    Test the retrieve_metrics endpoint.
+    """
+    model_dir = shared_datadir / "models"
+    metadata_path = model_dir / model_name / "metadata.json"
+
+    # Load and stringify metadata
+    metadata_dict = json.load(open(metadata_path))
+    metadata_str = json.dumps(metadata_dict)
+
+    # Test without category (retrieve all metrics)
+    response = client.post(
+        "/retrieve-metrics",
+        data={"model_metadata": metadata_str},
+    )
+    assert response.status_code == 200, f"Unexpected status code: {response.status_code}"
+    data = response.json()
+    assert isinstance(data, list), "Response should be a list"
+    assert len(data) > 0, "Response should contain metrics"
+    for metric in data:
+        assert "name" in metric, "Each metric should have a 'name'"
+        assert "description" in metric, "Each metric should have a 'description'"
+        assert isinstance(metric["name"], str), "'name' should be a string"
+        assert isinstance(metric["description"], str), "'description' should be a string"
+
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_validate_model(shared_datadir: Path, model_name: str):
