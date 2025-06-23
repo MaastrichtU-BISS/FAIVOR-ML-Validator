@@ -10,12 +10,13 @@ from fastapi.responses import JSONResponse
 # pylint: disable=no-name-in-module
 import pandas as pd
 from pydantic import BaseModel
+from pyparsing import Optional
 
 from faivor.calculate_metrics import MetricsCalculator
 from faivor.metrics.classification import classification_metrics
 from faivor.metrics.regression import regression_metrics
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
+from faivor.parse_data import ColumnMetadata, create_json_payloads, load_csv, validate_dataframe_format
 from faivor.run_docker import execute_model
 
 app = FastAPI()
@@ -167,21 +168,22 @@ async def retrieve_metrics(
     except Exception as e:
         raise HTTPException(500, f"Failed to retrieve metrics: {e}") from e
 
-
+class ColumnMetadataStruct(BaseModel):
+    columns: list[ColumnMetadata]
+    
 class ModelMetrics(BaseModel):
     model_name: str
     metrics: dict[str, float]
 
 
+
 @app.post(
     "/validate-model",
-    response_model=ModelMetrics,
     summary="Validate ML model",
     description=(
-        "Validates the ML model by checking the ML FAIR metadata, pulling the specified docker image, "
-        "and running metrics on the predictions derived from the provided CSV file. "
-        "The CSV file should contain the same columns as the model metadata inputs as well as the expected predictions. "
-        "Returns the model name and metrics."
+        "Validates the ML model by checking the provided FAIR model metadata, "
+        "the CSV file, and the column metadata. "
+        "The `column_metadata` input must follow the specified format."
     ),
 )
 async def validate_model(
@@ -192,8 +194,8 @@ async def validate_model(
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
     ),
-    data_metadata: str = Form(
-        ...,
+    column_metadata: ColumnMetadataStruct | None = Form(
+        None,
         description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not. ",
     ),
 ) -> JSONResponse:
@@ -206,21 +208,24 @@ async def validate_model(
         metadata = ModelMetadata(md)
         model_name = metadata.model_name or "unknown_model"
 
-        # Parse data metadata if provided
+        # Parse column metadata if provided
         try:
-            data_md = json.loads(data_metadata) if data_metadata else {}
-        except json.JSONDecodeError:
-            data_md = {}
+            if column_metadata:
+                col_metadata = json.loads(column_metadata) if column_metadata else {}
+                colomns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(col_metadata)
+            else:
+                colomns_metadata = []
+        except json.JSONDecodeError as exc:
+            raise HTTPException(400, "Invalid column metadata JSON format.") from exc
 
         # Load CSV data
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             shutil.copyfileobj(csv_file.file, tmp)
             tmp_path = Path(tmp.name)
 
-        df_data, _ = load_csv(tmp_path)
 
         # Prepare inputs and expected outputs
-        inputs, expected_outputs = create_json_payloads(metadata, tmp_path)
+        inputs, expected_outputs = create_json_payloads(metadata, tmp_path, colomns_metadata)
 
         # Execute model and get predictions
         try:

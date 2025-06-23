@@ -124,9 +124,9 @@ class MetricsCalculator:
         categorical_columns = []
         for column in column_metadata.get("columns", []):
             if column.get("categorical", False):
-                categorical_columns.append(column.get("name"))
-        
-        return categorical_columns    
+                    col_name = column.get("name_model", column.get("name_csv"))
+                    categorical_columns.append(col_name)
+        return categorical_columns
     
     def _compute_metrics_for_category(self, metrics_collection, category_name, y_true, y_pred, 
                                     all_metrics, sensitive_values=None, feature_importance=None):
