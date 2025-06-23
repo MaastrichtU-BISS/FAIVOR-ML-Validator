@@ -4,9 +4,6 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install Poetry
-RUN pip install poetry
-
 # Copy the pyproject.toml and poetry.lock files
 COPY pyproject.toml poetry.lock /app/
 
@@ -20,9 +17,14 @@ COPY ./README.md /app/
 # Set the PYTHONPATH environment variable
 ENV PYTHONPATH=/app/src
 
-# Install the dependencies using Poetry without creating a virtual environment
-RUN poetry config virtualenvs.create false \
-    && poetry install --without dev --no-interaction --no-ansi
+# Install Poetry
+RUN pip install poetry
+
+# Configure Poetry to not create virtual environments
+RUN poetry config virtualenvs.create false
+
+# Install project dependencies
+RUN poetry install
 
 # Expose the port where the FastAPI app will run
 EXPOSE 8000

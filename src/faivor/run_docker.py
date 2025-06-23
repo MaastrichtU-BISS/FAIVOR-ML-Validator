@@ -100,7 +100,7 @@ def wait_for_container(host_port: int, timeout: int = 10) -> None:
         time.sleep(0.5)
     raise RuntimeError("Docker container did not become ready within timeout.")
 
-def request_prediction(base_url: str, payload: Dict[str, Any], timeout: int = 360) -> None:
+def request_prediction(base_url: str, payload: list[dict[str, Any]], timeout: int = 360) -> None:
     """
     Send a POST request to /predict with the input payload.
 
@@ -108,8 +108,10 @@ def request_prediction(base_url: str, payload: Dict[str, Any], timeout: int = 36
     ----------
     base_url : str
         Base URL of the container, e.g., 'http://localhost:12345'
-    payload : Dict[str, Any]
-        JSON payload to send to /predict endpoint.
+    payload : list[dict[str, Any]]
+        JSON payload to send to /predict endpoint. It represents a list of inputs
+        to the model, where each input is a dictionary with keys matching the model's
+        input labels.
     timeout : int, optional
         Request timeout in seconds, by default 360.
 
@@ -197,7 +199,7 @@ def stop_docker_container(container: docker.models.containers.Container) -> None
     logging.debug("Stopping container...")
     container.stop()
 
-def execute_model(metadata: Any, input_payload: Dict[str, Any], timeout = 360) -> list[float]:
+def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 360) -> list[float]:
     """
     Multi-step model execution:
       1) Start container.
@@ -211,8 +213,8 @@ def execute_model(metadata: Any, input_payload: Dict[str, Any], timeout = 360) -
     ----------
     metadata : Any
         Metadata with 'docker_image' key or attribute.
-    input_payload : Dict[str, Any]
-        Inputs for the model.
+    input_payload : list[dict[str, Any]]
+        A list of inputs to send to the model, formatted as JSON.
     timeout : int, optional
         Maximum time (sec) to wait for model completion, by default 360.
 

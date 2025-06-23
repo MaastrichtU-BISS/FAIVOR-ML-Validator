@@ -2,62 +2,73 @@
   "columns": [
     {
       "id": "9033e6fc-2e8a-4f5c-86d8-737680d377fc",
-      "name": "patients",
+      "name_csv": "patients",
       "categorical": false
     },
     {
       "id": "fd3a6094-7243-4109-aa5f-2b3314df03cc",
-      "name": "BMI",
+      "name_csv": "BMI",
+      "name_model": "BMI",
       "categorical": false
     },
     {
       "id": "aedec553-ed2d-40e4-b86f-8fd567adfeb9",
-      "name": "WeightLoss",
+      "name_csv": "WeightLoss",
+      "name_model": "WeightLoss",
       "categorical": false
     },
     {
       "id": "da1cd030-b00a-4347-afac-0ed954cd9710",
-      "name": "TF",
+      "name_csv": "TF",
+      "name_model": "TF",
       "categorical": true
     },
     {
       "id": "362fd571-c68b-4ea2-8654-4e8e80483915",
-      "name": "PS",
+      "name_csv": "PS",
+      "name_model": "PS",
       "categorical": true
     },
     {
       "id": "8daf5b3d-c2d7-4596-aa17-eb9ad0847c25",
-      "name": "Tumorlocation",
+      "name_csv": "Tumorlocation",
+      "name_model": "Tumorlocation",
       "categorical": false
     },
     {
       "id": "1dee6ec0-7ddd-4e92-946e-f2880c25126e",
-      "name": "Tclassification",
+      "name_csv": "Tclassification",
+      "name_model": "Tclassification",
       "categorical": false
     },
     {
       "id": "86a11116-1b17-436e-91b2-5b7a24a9f29d",
-      "name": "Nclassification",
+      "name_csv": "Nclassification",
+      "name_model": "Nclassification",
       "categorical": false
     },
     {
       "id": "98fa9692-0500-4872-8e7e-ac4298b7b58b",
-      "name": "Systherapy",
+      "name_csv": "Systherapy",
+      "name_model": "Systherapy",
       "categorical": false
     },
     {
       "id": "c082e7c4-572a-48b7-a8f1-20f3f6c0007b",
-      "name": "RTdose_subman",
+      "name_csv": "RTdose_subman",
+      "name_model": "RTdose_subman",
       "categorical": false
     },
     {
       "id": "2c0aeb19-8e02-4901-ad12-f765a519aaf5",
-      "name": "RTdosesalivary",
+      "name_csv": "RTdosesalivary",
+      "name_model": "RTdosesalivary",
       "categorical": false
     },
     {
       "id": "c11ef96d-0026-43cb-93d1-76e32496307f",
-      "name": "Tube feeding of patient",
+      "name_csv": "Tube feeding of patient",
+      "name_model": "Tube feeding of patient",
       "categorical": false
     }
   ]
