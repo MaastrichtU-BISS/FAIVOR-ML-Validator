@@ -35,14 +35,8 @@ app.add_middleware(
 async def root():
     return {"message": "Welcome "}
 
-class ColumnMetadataModel(BaseModel):
-    id: str
-    name_csv: str
-    name_model: str
-    categorical: bool
-
 class ListColumnMetadataModel(BaseModel):
-    columns: list[ColumnMetadataModel]
+    columns: list[ColumnMetadata]
 
 class ValidationResponse(BaseModel):
     valid: bool
