@@ -35,6 +35,14 @@ app.add_middleware(
 async def root():
     return {"message": "Welcome "}
 
+class ColumnMetadataModel(BaseModel):
+    id: str
+    name_csv: str
+    name_model: str
+    categorical: bool
+
+class ListColumnMetadataModel(BaseModel):
+    columns: list[ColumnMetadataModel]
 
 class ValidationResponse(BaseModel):
     valid: bool
@@ -71,7 +79,7 @@ async def validate_csv(
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
     ),
-    column_metadata: ColumnMetadata | None = Form(
+    column_metadata: ListColumnMetadataModel | None = Form(
         None,
         description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not.",
     ),
@@ -177,8 +185,6 @@ async def retrieve_metrics(
     except Exception as e:
         raise HTTPException(500, f"Failed to retrieve metrics: {e}") from e
 
-class ColumnMetadataStruct(BaseModel):
-    columns: list[ColumnMetadata]
     
 class ModelMetrics(BaseModel):
     model_name: str
@@ -203,7 +209,7 @@ async def validate_model(
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
     ),
-    column_metadata: ColumnMetadataStruct | None = Form(
+    column_metadata: ListColumnMetadataModel | None = Form(
         None,
         description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not. ",
     ),
@@ -288,10 +294,20 @@ async def validate_model(
         raise HTTPException(500, f"Model validation failed: {e}") from e
 
 
-def sanitize_floats(data:any) -> any:
+def sanitize_floats(data: dict | list | float) -> dict | list | float | None:
     """
     Recursively sanitize floats in the data structure.
     Replace NaN and Infinity values with None.
+
+    Parameters
+    ----------
+    data : dict | list | float
+        The data structure to sanitize. It can be a dictionary, list, or float.
+
+    Returns
+    -------
+    dict | list | float | None
+        The sanitized data structure with NaN and Infinity values replaced by None.
 
     """
 
