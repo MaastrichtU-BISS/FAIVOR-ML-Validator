@@ -81,9 +81,7 @@ def test_validate_model(shared_datadir: Path, model_name: str):
     metadata_str = json.dumps(metadata_dict)
 
     # Load data metadata if available
-    data_metadata_dict = {}
-    if column_metadata_path.exists():
-        data_metadata_dict = json.load(open(column_metadata_path))
+    data_metadata_dict = json.load(open(column_metadata_path))
     data_metadata_str = json.dumps(data_metadata_dict)
 
     # Upload files
@@ -98,7 +96,9 @@ def test_validate_model(shared_datadir: Path, model_name: str):
     # Validate response
     assert response.status_code == 200, f"Unexpected status code: {response.status_code}"
     data = response.json()
-    assert "model_name" in data, "Response should contain model_name"
-    assert "metrics" in data, "Response should contain metrics"
-    assert "overall_metrics" in data["metrics"], "Metrics should include overall_metrics"
-    assert "threshold_metrics" in data["metrics"], "Metrics should include threshold_metrics"
+    assert "model_name" in data, "Response should contain `model_name`."
+    assert "metrics" in data, "Response should contain metrics."
+    assert "overall_metrics" in data["metrics"], "Metrics should include `overall_metrics`."
+    assert data["metrics"]["overall_metrics"], "Overall metrics should not be empty."
+    assert "threshold_metrics" in data["metrics"], "Metrics should include `threshold_metrics`."
+    assert data["metrics"]["threshold_metrics"], "Threshold metrics should not be empty."

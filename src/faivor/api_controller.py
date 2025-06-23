@@ -1,4 +1,5 @@
 import json
+import math
 import shutil
 import tempfile
 from pathlib import Path
@@ -71,6 +72,10 @@ async def validate_csv(
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
     ),
+    column_metadata: ColumnMetadata | None = Form(
+        None,
+        description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not.",
+    ),
 ) -> JSONResponse:
     """
     Validate a CSV file against provided metadata and return all CSV columns.
@@ -89,6 +94,11 @@ async def validate_csv(
         df_data, columns = load_csv(tmp_path)
     except pd.errors.ParserError as e:
         raise HTTPException(400, f"Invalid CSV format: {e}") from e
+    
+    if column_metadata:
+        for col in column_metadata:
+            if col.name_csv in df_data.columns:
+                df_data.rename(columns={col.name_csv: col.name_model}, inplace=True)
 
     validation_result, msg = validate_dataframe_format(metadata, df_data)
 
@@ -245,8 +255,10 @@ async def validate_model(
         overall_metrics = metrics_calculator.calculate_metrics()
 
         # Calculate threshold metrics (if applicable)
+        
         threshold_metrics = {}
-        if metadata.metadata.get("model_type", "").lower() == "classification":
+        model_type = metadata.metadata.get('model_type', 'classification').lower()
+        if model_type == "classification":
             try:
                 threshold_metrics = metrics_calculator.calculate_threshold_metrics()
             except Exception as e:
@@ -261,10 +273,13 @@ async def validate_model(
             "threshold_metrics": threshold_metrics,
         }
 
+        # Metrics must be JSON compliant. Our current test data contains Infinity values, which are not JSON compliant. We sanitize them to None.
+        sanitized_metrics = sanitize_floats(metrics)
+
         return JSONResponse(
             content={
                 "model_name": model_name,
-                "metrics": metrics,
+                "metrics": sanitized_metrics,
             }
         )
 
@@ -272,3 +287,20 @@ async def validate_model(
         raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
     except Exception as e:
         raise HTTPException(500, f"Model validation failed: {e}") from e
+
+
+def sanitize_floats(data:any) -> any:
+    """
+    Recursively sanitize floats in the data structure.
+    Replace NaN and Infinity values with None.
+
+    """
+
+    if isinstance(data, dict):
+        return {key: sanitize_floats(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_floats(item) for item in data]
+    elif isinstance(data, float):
+        if math.isnan(data) or math.isinf(data):
+            return None  # Replace invalid float with `None`
+    return data
