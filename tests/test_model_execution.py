@@ -2,7 +2,7 @@ import json
 import numpy as np
 import pytest
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads
+from faivor.parse_data import ColumnMetadata, create_json_payloads
 from faivor.run_docker import execute_model
 from faivor.calculate_metrics import MetricsCalculator
 
@@ -17,7 +17,11 @@ def test_model_execution(shared_datadir, model_name):
     model_metadata = ModelMetadata(metadata_json)
     assert model_metadata.docker_image, "Docker image name should be provided"
     csv_path = model_dir / model_name / "data.csv"
-    inputs, _ = create_json_payloads(model_metadata, csv_path)
+    
+    column_metadata_json = json.loads((model_dir / model_name / "column_metadata.json").read_text())
+    column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+    
+    inputs, _ = create_json_payloads(model_metadata, csv_path, column_metadata)
     try:
         prediction = execute_model(model_metadata, inputs)
     except Exception as e:
@@ -41,6 +45,10 @@ def model_info(shared_datadir, model_name):
     model_type = metadata_json.get('model_type', 'classification')
     csv_path = model_path / "data.csv"
     column_metadata_path = model_path / "column_metadata.json"
+
+    column_metadata_json = json.loads((column_metadata_path).read_text())
+    column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+    
     
     return {
         "metadata_json": metadata_json,
@@ -48,6 +56,7 @@ def model_info(shared_datadir, model_name):
         "model_type": model_type,
         "csv_path": csv_path,
         "column_metadata_path": column_metadata_path,
+        "column_metadata": column_metadata,
         "model_path": model_path,
         "model_name": model_name
     }
@@ -57,8 +66,9 @@ def input_data(model_info):
     """Fixture to provide input and expected output data."""
     model_metadata = model_info["model_metadata"]
     csv_path = model_info["csv_path"]
-    
-    inputs, expected_outputs = create_json_payloads(model_metadata, csv_path)
+    column_metadata = model_info["column_metadata"]
+
+    inputs, expected_outputs = create_json_payloads(model_metadata, csv_path, column_metadata)
     return inputs, expected_outputs
 
 @pytest.fixture

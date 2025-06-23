@@ -43,9 +43,9 @@ def test_create_json_payloads_and_validate(shared_datadir: Path):
         csv_path = model_location / "data.csv"
 
         column_metadata_json = json.loads((model_location / "column_metadata.json").read_text())
-        columns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+        column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
 
-        inputs, outputs = create_json_payloads(metadata, csv_path, columns_metadata)
+        inputs, outputs = create_json_payloads(metadata, csv_path, column_metadata)
         assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
         assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
         # spot‑check that keys match labels
@@ -72,9 +72,9 @@ def test_changed_csv(shared_datadir: Path):
     csv_path = model_dir / "pilot-model_1" / "changed_data" / "data.csv"
 
     column_metadata_json = json.loads((model_dir / "pilot-model_1" / "changed_data" / "column_metadata.json").read_text(encoding="utf-8"))
-    columns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+    column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
 
-    inputs, outputs = create_json_payloads(model_metadata, csv_path, columns_metadata)
+    inputs, outputs = create_json_payloads(model_metadata, csv_path, column_metadata)
     assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
     assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
     # spot‑check that keys match labels

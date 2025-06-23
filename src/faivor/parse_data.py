@@ -12,7 +12,7 @@ from faivor.model_metadata import ModelMetadata
 
 
 @dataclass
-class ColumnMetadata(BaseModel):
+class ColumnMetadata():
     """
     Represents metadata for  a single column in a CSV file.
     """
