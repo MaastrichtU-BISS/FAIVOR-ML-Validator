@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 # pylint: disable=no-name-in-module
 import pandas as pd
 from pydantic import BaseModel
-from pyparsing import Optional
 
 from faivor.calculate_metrics import MetricsCalculator
 from faivor.metrics.classification import classification_metrics
@@ -222,9 +221,9 @@ async def validate_model(
         try:
             if column_metadata:
                 col_metadata = json.loads(column_metadata) if column_metadata else {}
-                colomns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(col_metadata)
+                columns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(col_metadata)
             else:
-                colomns_metadata = []
+                columns_metadata = []
         except json.JSONDecodeError as exc:
             raise HTTPException(400, "Invalid column metadata JSON format.") from exc
 
@@ -235,7 +234,7 @@ async def validate_model(
 
 
         # Prepare inputs and expected outputs
-        inputs, expected_outputs = create_json_payloads(metadata, tmp_path, colomns_metadata)
+        inputs, expected_outputs = create_json_payloads(metadata, tmp_path, columns_metadata)
 
         # Execute model and get predictions
         try:

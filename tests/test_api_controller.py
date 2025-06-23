@@ -21,7 +21,7 @@ def test_validate_csv_format(shared_datadir: Path, model_name: str):
     csv_path = model_dir / model_name / "data.csv"
 
     # load and stringify metadata
-    metadata_dict = json.load(open(metadata_path))
+    metadata_dict = json.load(open(metadata_path, encoding="utf-8"))
     metadata_str = json.dumps(metadata_dict)
 
     # upload
@@ -47,7 +47,7 @@ def test_retrieve_metrics(shared_datadir: Path, model_name: str):
     metadata_path = model_dir / model_name / "metadata.json"
 
     # Load and stringify metadata
-    metadata_dict = json.load(open(metadata_path))
+    metadata_dict = json.load(open(metadata_path, encoding="utf-8"))
     metadata_str = json.dumps(metadata_dict)
 
     # Test without category (retrieve all metrics)
@@ -77,11 +77,11 @@ def test_validate_model(shared_datadir: Path, model_name: str):
     column_metadata_path = model_dir / model_name / "column_metadata.json"
 
     # Load and stringify metadata
-    metadata_dict = json.load(open(metadata_path))
+    metadata_dict = json.load(open(metadata_path, encoding="utf-8"))
     metadata_str = json.dumps(metadata_dict)
 
     # Load data metadata if available
-    data_metadata_dict = json.load(open(column_metadata_path))
+    data_metadata_dict = json.load(open(column_metadata_path, encoding="utf-8"))
     data_metadata_str = json.dumps(data_metadata_dict)
 
     # Upload files

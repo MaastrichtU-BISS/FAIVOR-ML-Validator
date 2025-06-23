@@ -25,7 +25,7 @@ def test_model_execution(shared_datadir, model_name):
     try:
         prediction = execute_model(model_metadata, inputs)
     except Exception as e:
-        raise RuntimeError(f"Model execution failed: {e}")
+        raise RuntimeError(f"Model execution failed: {e}") from e
 
     assert prediction is not None, "Model execution should return a prediction."
     assert isinstance(prediction, list), "Prediction result should be a dictionary."

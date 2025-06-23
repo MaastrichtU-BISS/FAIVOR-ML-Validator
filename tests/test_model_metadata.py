@@ -61,7 +61,7 @@ def test_failing_csv(shared_datadir: Path):
     csv_path = model_dir / "pilot-model_1" / "changed_data" / "data.csv"
 
     with pytest.raises(ValueError):
-        inputs, outputs = create_json_payloads(model_metadata, csv_path, [])
+        create_json_payloads(model_metadata, csv_path, [])
 
 def test_changed_csv(shared_datadir: Path):
     """CSV → payloads round‑trip and format validation."""

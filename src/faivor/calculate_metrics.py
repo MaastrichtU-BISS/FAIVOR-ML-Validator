@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import logging
 from pathlib import Path
-from typing import Dict, List, Any, Union, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
 
 from faivor.model_metadata import ModelMetadata
