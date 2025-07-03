@@ -1,10 +1,68 @@
+from dataclasses import dataclass
 import json
 import pandas as pd
 from pathlib import Path
 import csv
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional, Tuple
+
+from pydantic import BaseModel
 
 from faivor.model_metadata import ModelMetadata
+
+
+
+@dataclass
+class ColumnMetadata():
+    """
+    Represents metadata for  a single column in a CSV file.
+    """
+    id: str
+    name_csv: str
+    name_model: str
+    categorical: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the ColumnMetadata instance to a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary representation of the column metadata.
+        """
+        return {
+            "id": self.id,
+            "name_csv": self.name_csv,
+            "name_model": self.name_model,
+            "categorical": self.categorical,
+        }
+    
+    @staticmethod
+    def load_from_dict(data: Dict[str, Any]) -> list["ColumnMetadata"]:
+        """
+        Load column metadata from a dictionary.
+
+        Parameters
+        ----------
+        data : Dict[str, Any]
+            Dictionary containing column metadata.
+
+        Returns
+        -------
+        list[ColumnMetadata]
+            List of ColumnMetadata instances.
+        """
+        return [
+            ColumnMetadata(
+                id=col["id"],
+                name_csv=col["name_csv"],
+                name_model=col.get("name_model", col["name_csv"]),
+                categorical=col.get("categorical", False)
+            ) for col in data.get("columns", [])
+        ]
+
+
+
 
 def detect_delimiter(csv_path: Path) -> str:
     """
@@ -91,7 +149,8 @@ def validate_dataframe_format(
 
 def create_json_payloads(
     metadata: ModelMetadata,
-    csv_path: Path
+    csv_path: Path,
+    column_metadata: list[ColumnMetadata]
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Create JSON payloads for input and output data based on provided metadata and CSV file.
@@ -105,6 +164,8 @@ def create_json_payloads(
         and `.output` (str).
     csv_path : Path
         Path to the CSV file.
+    column_metadata : list[ColumnMetadata]
+        Additional metadata for each column, used to rename columns in the DataFrame.
 
     Returns
     -------
@@ -119,6 +180,13 @@ def create_json_payloads(
     """
 
     df, all_columns = load_csv(csv_path)
+
+    if column_metadata:
+        # If data metadata is provided, rename columns in the DataFrame that mates csv_name to model_name
+        for col in column_metadata:
+            if col.name_csv in df.columns:
+                df.rename(columns={col.name_csv: col.name_model}, inplace=True)
+                
     is_valid, message = validate_dataframe_format(metadata, df)
 
     if not is_valid:

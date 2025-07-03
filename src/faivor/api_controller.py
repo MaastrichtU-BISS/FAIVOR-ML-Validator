@@ -1,4 +1,5 @@
 import json
+import math
 import shutil
 import tempfile
 from pathlib import Path
@@ -11,8 +12,12 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 from pydantic import BaseModel
 
+from faivor.calculate_metrics import MetricsCalculator
+from faivor.metrics.classification import classification_metrics
+from faivor.metrics.regression import regression_metrics
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import create_json_payloads, load_csv, validate_dataframe_format
+from faivor.parse_data import ColumnMetadata, create_json_payloads, load_csv, validate_dataframe_format
+from faivor.run_docker import execute_model
 
 app = FastAPI()
 
@@ -30,18 +35,14 @@ app.add_middleware(
 async def root():
     return {"message": "Welcome "}
 
+class ListColumnMetadataModel(BaseModel):
+    columns: list[ColumnMetadata]
 
 class ValidationResponse(BaseModel):
     valid: bool
     message: str | None = None
     csv_columns: list[str]
     model_input_columns: list[str]
-
-
-
-class ModelMetrics(BaseModel):
-    model_name: str
-    metrics: dict[str, float]
 
 
 @app.post(
@@ -60,7 +61,7 @@ class ModelMetrics(BaseModel):
                 "application/json": {
                     "example": {"message": "Invalid metadata JSON: ..."}
                 }
-            }
+            },
         },
     },
 )
@@ -71,6 +72,10 @@ async def validate_csv(
     ),
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
+    ),
+    column_metadata: ListColumnMetadataModel | None = Form(
+        None,
+        description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not.",
     ),
 ) -> JSONResponse:
     """
@@ -90,6 +95,11 @@ async def validate_csv(
         df_data, columns = load_csv(tmp_path)
     except pd.errors.ParserError as e:
         raise HTTPException(400, f"Invalid CSV format: {e}") from e
+    
+    if column_metadata:
+        for col in column_metadata:
+            if col.name_csv in df_data.columns:
+                df_data.rename(columns={col.name_csv: col.name_model}, inplace=True)
 
     validation_result, msg = validate_dataframe_format(metadata, df_data)
 
@@ -104,13 +114,85 @@ async def validate_csv(
         }
     )
 
+
+class MetricDescription(BaseModel):
+    name: str
+    description: str
+    type: str
+
+
+@app.post(
+    "/retrieve-metrics",
+    response_model=list[MetricDescription],
+    summary="Retrieve applicable metrics for the model",
+    description=(
+        "Returns a list of MetricDescription objects containing the names and descriptions "
+        "of metrics applicable to the model based on the provided FAIR model metadata. "
+        "Optionally filter by category (`performance`, `fairness`, `explainability`)."
+    ),
+)
+async def retrieve_metrics(
+    model_metadata: str = Form(
+        ...,
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field",
+    ),
+) -> list[MetricDescription]:
+    """
+    Retrieve applicable metrics for the model.
+    """
+    try:
+        # Parse the model metadata
+        md = json.loads(model_metadata)
+        metadata = ModelMetadata(md)
+        model_type = metadata.metadata.get("model_type", "regression").lower()
+
+        # detect appropriate metrics module based on model type
+        metrics_module = (classification_metrics if model_type.lower() == "classification" 
+                        else regression_metrics)
+
+        # Collect metrics
+        performance_metrics = [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "performance"
+                )
+                for metric in metrics_module.PERFORMANCE_METRICS
+            ]
+        fairness_metrics = [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "fairness"
+                )
+                for metric in metrics_module.FAIRNESS_METRICS
+            ]
+        explainability_metrics= [
+                MetricDescription(
+                    name=metric.regular_name, description=metric.description, type = "explainability"
+                )
+                for metric in metrics_module.EXPLAINABILITY_METRICS
+            ]
+
+
+        # Return all metrics as a flat list
+        return performance_metrics + fairness_metrics + explainability_metrics
+
+    except json.JSONDecodeError as e:
+        raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
+    except Exception as e:
+        raise HTTPException(500, f"Failed to retrieve metrics: {e}") from e
+
+    
+class ModelMetrics(BaseModel):
+    model_name: str
+    metrics: dict[str, float]
+
+
+
 @app.post(
     "/validate-model",
-    response_model=ModelMetrics,
     summary="Validate ML model",
     description=(
-        "Validates the ML model by checking the ML FAIR metadata, pulling the specified docker image and running metrics on the predictions derived from the provided CSV file. The CSV file should contain the same columns as the model metadata inputs as well as the expected predictions. "
-        "Returns the model name and metrics."
+        "Validates the ML model by checking the provided FAIR model metadata, "
+        "the CSV file, and the column metadata. "
+        "The `column_metadata` input must follow the specified format."
     ),
 )
 async def validate_model(
@@ -121,38 +203,82 @@ async def validate_model(
     csv_file: UploadFile = File(
         ..., description="CSV file to validate; delimiter is auto-detected"
     ),
-    data_metadata: str = Form(
-        ...,
-        description="Metadata JSON, containing naming ",
+    column_metadata: ListColumnMetadataModel | None = Form(
+        None,
+        description="Metadata JSON, containing naming mapping for the CSV columns, as well as information about whether the column is categorical (it can be used for threshold metrics calculation) or not. ",
     ),
 ) -> JSONResponse:
     """
     Validate a model with metadata and CSV data.
     """
     try:
-        # Parse the model metadata to extract model name
+        # Parse the model metadata
         md = json.loads(model_metadata)
-        model_name = md.get('model_name', md.get('name', 'unknown_model'))
+        metadata = ModelMetadata(md)
+        model_name = metadata.model_name or "unknown_model"
 
-        # Parse data metadata if provided
+        # Parse column metadata if provided
         try:
-            data_md = json.loads(data_metadata) if data_metadata else {}
-        except json.JSONDecodeError:
-            data_md = {}
+            if column_metadata:
+                col_metadata = json.loads(column_metadata) if column_metadata else {}
+                columns_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(col_metadata)
+            else:
+                columns_metadata = []
+        except json.JSONDecodeError as exc:
+            raise HTTPException(400, "Invalid column metadata JSON format.") from exc
 
-        # TODO: Implement actual model validation logic
-        # For now, return a basic response with placeholder metrics
-        # inputs, _ = create_json_payloads(model_metadata, csv_file)
-        # prediction = execute_model(model_metadata, inputs)
+        # Load CSV data
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            shutil.copyfileobj(csv_file.file, tmp)
+            tmp_path = Path(tmp.name)
 
-        # Return proper response format matching ModelMetrics schema
+
+        # Prepare inputs and expected outputs
+        inputs, expected_outputs = create_json_payloads(metadata, tmp_path, columns_metadata)
+
+        # Execute model and get predictions
+        try:
+            predictions = execute_model(metadata, inputs)
+        except Exception as e:
+            raise HTTPException(500, f"Model execution failed: {e}") from e
+
+        # Initialize MetricsCalculator
+        metrics_calculator = MetricsCalculator(
+            model_metadata=metadata,
+            predictions=predictions,
+            expected_outputs=expected_outputs,
+            inputs=inputs,
+        )
+
+        # Calculate metrics
+        overall_metrics = metrics_calculator.calculate_metrics()
+
+        # Calculate threshold metrics (if applicable)
+        
+        threshold_metrics = {}
+        model_type = metadata.metadata.get('model_type', 'classification').lower()
+        if model_type == "classification":
+            try:
+                threshold_metrics = metrics_calculator.calculate_threshold_metrics()
+            except Exception as e:
+                threshold_metrics = {
+                    "status": "error",
+                    "message": f"Failed to calculate threshold metrics: {e}",
+                }
+
+        # Combine results
+        metrics = {
+            "overall_metrics": overall_metrics,
+            "threshold_metrics": threshold_metrics,
+        }
+
+        # Metrics must be JSON compliant. Our current test data contains Infinity values, which are not JSON compliant. We sanitize them to None.
+        sanitized_metrics = sanitize_floats(metrics)
+
         return JSONResponse(
             content={
                 "model_name": model_name,
-                "metrics": {
-                    "validation_status": 1.0,
-                    "data_processed": 1.0
-                }
+                "metrics": sanitized_metrics,
             }
         )
 
@@ -160,3 +286,30 @@ async def validate_model(
         raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
     except Exception as e:
         raise HTTPException(500, f"Model validation failed: {e}") from e
+
+
+def sanitize_floats(data: dict | list | float) -> dict | list | float | None:
+    """
+    Recursively sanitize floats in the data structure.
+    Replace NaN and Infinity values with None.
+
+    Parameters
+    ----------
+    data : dict | list | float
+        The data structure to sanitize. It can be a dictionary, list, or float.
+
+    Returns
+    -------
+    dict | list | float | None
+        The sanitized data structure with NaN and Infinity values replaced by None.
+
+    """
+
+    if isinstance(data, dict):
+        return {key: sanitize_floats(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_floats(item) for item in data]
+    elif isinstance(data, float):
+        if math.isnan(data) or math.isinf(data):
+            return None  # Replace invalid float with `None`
+    return data

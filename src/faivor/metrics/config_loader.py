@@ -2,11 +2,10 @@ import yaml
 from importlib import import_module
 from pathlib import Path
 from faivor.metrics.metric import ModelMetric
-from typing import List, Tuple
 
-def load_metrics(yaml_filename: str) -> Tuple[list[ModelMetric], list[ModelMetric], list[ModelMetric]]:
+def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetric], list[ModelMetric]]:
     yaml_path = Path(__file__).parent / yaml_filename
-    with open(yaml_path, 'r') as f:
+    with open(yaml_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     performance = []

@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 from faivor.model_metadata import ModelInput, ModelMetadata
 from faivor.parse_data import (
+    ColumnMetadata,
     detect_delimiter,
     load_csv,
     validate_dataframe_format,
@@ -15,9 +16,14 @@ from typing import List
 
 MODEL_NAMES = ["pilot-model_1", "pilot-model_2"]
 
+def get_all_model_paths(shared_datadir: Path) -> List[Path]:
+    """Retrieve model paths from shared data directory."""
+    model_dir = shared_datadir / "models"
+    return [model_dir / subdir for subdir in model_dir.iterdir() if subdir.is_dir()]
+
 def test_model_metadata_creation(shared_datadir: Path):
     """ModelMetadata must populate all required fields."""
-    for model_location in get_model_paths(shared_datadir):
+    for model_location in get_all_model_paths(shared_datadir):
         metadata_content = json.loads((model_location / "metadata.json").read_text(encoding="utf-8"))
         metadata = ModelMetadata(metadata_content)
         assert metadata.model_name, "model_name empty"
@@ -31,17 +37,49 @@ def test_model_metadata_creation(shared_datadir: Path):
 
 def test_create_json_payloads_and_validate(shared_datadir: Path):
     """CSV → payloads round‑trip and format validation."""
-    for model_location in get_model_paths(shared_datadir):
+    for model_location in get_all_model_paths(shared_datadir):
         metadata_content = json.loads((model_location / "metadata.json").read_text())
         metadata = ModelMetadata(metadata_content)
         csv_path = model_location / "data.csv"
 
-        inputs, outputs = create_json_payloads(metadata, csv_path)
+        column_metadata_json = json.loads((model_location / "column_metadata.json").read_text())
+        column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+
+        inputs, outputs = create_json_payloads(metadata, csv_path, column_metadata)
         assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
         assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
         # spot‑check that keys match labels
         assert set(inputs[0].keys()) == {inp.input_label for inp in metadata.inputs}
         assert set(outputs[0].keys()) == {metadata.output}
+
+def test_failing_csv(shared_datadir: Path):
+    """CSV → payloads round‑trip and format validation."""
+    model_dir = shared_datadir / "models"
+    metadata_json = json.loads((model_dir / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
+    model_metadata = ModelMetadata(metadata_json)
+    assert model_metadata.docker_image, "Docker image name should be provided"
+    csv_path = model_dir / "pilot-model_1" / "changed_data" / "data.csv"
+
+    with pytest.raises(ValueError):
+        create_json_payloads(model_metadata, csv_path, [])
+
+def test_changed_csv(shared_datadir: Path):
+    """CSV → payloads round‑trip and format validation."""
+    model_dir = shared_datadir / "models"
+    metadata_json = json.loads((model_dir / "pilot-model_1" / "metadata.json").read_text(encoding="utf-8"))
+    model_metadata = ModelMetadata(metadata_json)
+    assert model_metadata.docker_image, "Docker image name should be provided"
+    csv_path = model_dir / "pilot-model_1" / "changed_data" / "data.csv"
+
+    column_metadata_json = json.loads((model_dir / "pilot-model_1" / "changed_data" / "column_metadata.json").read_text(encoding="utf-8"))
+    column_metadata : list[ColumnMetadata] = ColumnMetadata.load_from_dict(column_metadata_json)
+
+    inputs, outputs = create_json_payloads(model_metadata, csv_path, column_metadata)
+    assert isinstance(inputs, list) and inputs, "inputs empty or wrong type"
+    assert isinstance(outputs, list) and outputs, "outputs empty or wrong type"
+    # spot‑check that keys match labels
+    assert set(inputs[0].keys()) == {inp.input_label for inp in model_metadata.inputs}
+    assert set(outputs[0].keys()) == {model_metadata.output}
 
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
@@ -95,9 +133,3 @@ def test_load_csv_and_roundtrip(tmp_path: Path):
     df, columns = load_csv(p)
     assert isinstance(df, pd.DataFrame)
     assert list(columns) == ["foo", "bar"]
-
-
-def get_model_paths(shared_datadir: Path) -> List[Path]:
-    """Retrieve model paths from shared data directory."""
-    model_dir = shared_datadir / "models"
-    return [model_dir / subdir for subdir in model_dir.iterdir() if subdir.is_dir()]
