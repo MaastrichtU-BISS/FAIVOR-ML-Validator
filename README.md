@@ -47,6 +47,10 @@ uvicorn src.FAIRmodels-validator.api_controller:app --reload
 
 The server will be running on [http://localhost:8000](http://localhost:8000). You can access the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
 
+## Docker Requirements
+
+**Important:** This service requires Docker access to validate ML models. When running in a container, you must mount the Docker socket. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
 ## Local development
 
 To get started with this project, please follow these steps to set up the environment and configure Jupyter for notebook use:

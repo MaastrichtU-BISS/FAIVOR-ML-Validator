@@ -1,4 +1,5 @@
 import logging
+import os
 import docker
 import requests
 import socket
@@ -55,9 +56,26 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
-        raise RuntimeError(
-            f"Docker is not available or not running. Please ensure Docker Desktop is installed and running. Error: {e}"
-        ) from e
+        # Provide more specific error messages based on the error type
+        error_msg = str(e).lower()
+        if "no such file or directory" in error_msg and "docker.sock" in error_msg:
+            raise RuntimeError(
+                "Docker socket not found. When running in a container, ensure Docker socket is mounted:\n"
+                "  -v /var/run/docker.sock:/var/run/docker.sock\n"
+                "See DEPLOYMENT.md for detailed instructions."
+            ) from e
+        elif "permission denied" in error_msg:
+            raise RuntimeError(
+                "Permission denied accessing Docker. Possible solutions:\n"
+                "1. Add user to docker group\n"
+                "2. Run with appropriate permissions\n"
+                "3. Check Docker socket permissions\n"
+                f"Original error: {e}"
+            ) from e
+        else:
+            raise RuntimeError(
+                f"Docker is not available or not running. Please ensure Docker Desktop is installed and running. Error: {e}"
+            ) from e
 
     try:
         client.images.pull(image_name)
@@ -112,7 +130,7 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
 
     return container, host_port
 
-def wait_for_container(host_port: int, timeout: int = 10) -> None:
+def wait_for_container(host_port: int, timeout: int = None, container: docker.models.containers.Container = None) -> None:
     """
     Wait for the container to respond on the given host port.
 
@@ -121,24 +139,70 @@ def wait_for_container(host_port: int, timeout: int = 10) -> None:
     host_port : int
         The bound host port.
     timeout : int, optional
-        Maximum wait time in seconds, by default 10.
+        Maximum wait time in seconds. If None, uses CONTAINER_STARTUP_TIMEOUT env var or 60 seconds.
+    container : docker.models.containers.Container, optional
+        Container instance for getting logs if needed.
 
     Raises
     ------
     RuntimeError
         If the container doesn't respond within the timeout.
     """
+    if timeout is None:
+        timeout = int(os.getenv("CONTAINER_STARTUP_TIMEOUT", "60"))
+    
+    logging.info(f"Waiting up to {timeout} seconds for container to become ready...")
     start = time.time()
+    last_log_time = start
+    
     while (time.time() - start) < timeout:
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
             if sock.connect_ex(("localhost", host_port)) == 0:
                 logging.debug("Container is responding on port %d", host_port)
+                # Give the container a moment to fully initialize after port is open
+                time.sleep(1)
                 return
+        
+        # Log progress every 5 seconds
+        if time.time() - last_log_time > 5:
+            elapsed = int(time.time() - start)
+            logging.info(f"Still waiting for container... ({elapsed}/{timeout} seconds)")
+            
+            # Check container status and logs if available
+            if container:
+                try:
+                    container.reload()
+                    if container.status != "running":
+                        logs = container.logs(tail=20).decode(errors="ignore")
+                        raise RuntimeError(
+                            f"Container stopped unexpectedly. Status: {container.status}\n"
+                            f"Recent logs:\n{logs}"
+                        )
+                except Exception as e:
+                    logging.warning(f"Could not check container status: {e}")
+            
+            last_log_time = time.time()
+        
         time.sleep(0.5)
-    raise RuntimeError(
+    
+    # Timeout reached - provide helpful error message
+    error_msg = (
         f"Docker container did not become ready within {timeout} seconds. "
-        f"The container may be taking longer than expected to start, or there may be an issue with the model initialization."
+        f"The container may need more time to start.\n\n"
+        f"Possible solutions:\n"
+        f"1. Increase timeout by setting CONTAINER_STARTUP_TIMEOUT environment variable\n"
+        f"2. Check if the model image needs to be downloaded (first run)\n"
+        f"3. Verify the model container starts correctly: docker run -p 8000:8000 <image>\n"
     )
+    
+    if container:
+        try:
+            logs = container.logs(tail=30).decode(errors="ignore")
+            error_msg += f"\nRecent container logs:\n{logs}"
+        except:
+            pass
+    
+    raise RuntimeError(error_msg)
 
 def request_prediction(base_url: str, payload: list[dict[str, Any]], timeout: int = 360) -> None:
     """
@@ -279,8 +343,23 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
         container, port = start_docker_container(metadata.docker_image)
         base_url = f"http://localhost:{port}"
 
-        wait_for_container(port)
-        request_prediction(base_url, input_payload, timeout)
+        wait_for_container(port, container=container)
+        
+        # Retry the prediction request a few times in case the container needs a moment
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                request_prediction(base_url, input_payload, timeout)
+                break
+            except requests.exceptions.ConnectionError as e:
+                if attempt < max_retries - 1:
+                    logging.warning(f"Connection failed on attempt {attempt + 1}, retrying in 2 seconds...")
+                    time.sleep(2)
+                else:
+                    raise RuntimeError(
+                        f"Failed to connect to model container after {max_retries} attempts. "
+                        f"The container may not be fully initialized yet."
+                    ) from e
 
         start_time = time.time()
         while time.time() - start_time < timeout:
