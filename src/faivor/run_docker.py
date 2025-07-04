@@ -5,7 +5,7 @@ import requests
 import socket
 import time
 from contextlib import closing
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 
 # Mapping of status codes to strings
 status_map = {
@@ -130,7 +130,7 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
 
     return container, host_port
 
-def wait_for_container(host_port: int, timeout: int = None, container: docker.models.containers.Container = None) -> None:
+def wait_for_container(host_port: int, timeout: Optional[int] = None, container: Optional[docker.models.containers.Container] = None) -> None:
     """
     Wait for the container to respond on the given host port.
 
