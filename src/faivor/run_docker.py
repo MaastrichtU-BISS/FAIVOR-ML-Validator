@@ -46,24 +46,56 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
     -------
     Tuple[docker.models.containers.Container, int]
         The container instance and the bound host port.
+    
+    Raises
+    ------
+    RuntimeError
+        If Docker is not available or container fails to start.
     """
-    client = docker.from_env()
+    try:
+        client = docker.from_env()
+    except docker.errors.DockerException as e:
+        raise RuntimeError(
+            f"Docker is not available or not running. Please ensure Docker Desktop is installed and running. Error: {e}"
+        ) from e
 
     try:
         client.images.pull(image_name)
         logging.debug("Successfully pulled image: %s", image_name)
+    except docker.errors.ImageNotFound:
+        raise RuntimeError(
+            f"Docker image '{image_name}' not found. Please check the image name and ensure it exists."
+        )
+    except docker.errors.APIError as e:
+        if "pull access denied" in str(e):
+            raise RuntimeError(
+                f"Access denied when pulling image '{image_name}'. Please check your Docker Hub credentials or image permissions."
+            ) from e
+        logging.warning("Could not pull image %s, attempting to use local copy: %s", image_name, e)
     except Exception as exc:
         logging.warning("Could not pull image %s, continuing locally: %s", image_name, exc)
 
     host_port = find_free_port()
     logging.debug("Launching container on host port %d...", host_port)
 
-    container = client.containers.run(
-        image=image_name,
-        detach=True,
-        remove=True,
-        ports={f"{internal_port}/tcp": host_port}
-    )
+    try:
+        container = client.containers.run(
+            image=image_name,
+            detach=True,
+            remove=True,
+            ports={f"{internal_port}/tcp": host_port}
+        )
+    except docker.errors.ImageNotFound:
+        raise RuntimeError(
+            f"Docker image '{image_name}' not found locally and could not be pulled. "
+            "Please ensure the image name is correct and you have internet connectivity."
+        )
+    except docker.errors.APIError as e:
+        raise RuntimeError(
+            f"Failed to start Docker container for image '{image_name}': {e}. "
+            "Check Docker daemon logs for more details."
+        ) from e
+    
     time.sleep(1)
 
     container.reload()
@@ -72,6 +104,11 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
     if container.status != "running":
         logs = container.logs().decode(errors="ignore")
         logging.error("Container not in 'running' state. Logs:\n%s", logs)
+        container.stop()
+        raise RuntimeError(
+            f"Container failed to start properly. Status: {container.status}. \n"
+            f"Container logs:\n{logs[:500]}..." if len(logs) > 500 else f"Container logs:\n{logs}"
+        )
 
     return container, host_port
 
@@ -98,7 +135,10 @@ def wait_for_container(host_port: int, timeout: int = 10) -> None:
                 logging.debug("Container is responding on port %d", host_port)
                 return
         time.sleep(0.5)
-    raise RuntimeError("Docker container did not become ready within timeout.")
+    raise RuntimeError(
+        f"Docker container did not become ready within {timeout} seconds. "
+        f"The container may be taking longer than expected to start, or there may be an issue with the model initialization."
+    )
 
 def request_prediction(base_url: str, payload: list[dict[str, Any]], timeout: int = 360) -> None:
     """
@@ -228,10 +268,17 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
     RuntimeError
         If container fails or if it times out waiting for completion.
     """
-    container, port = start_docker_container(metadata.docker_image)
-    base_url = f"http://localhost:{port}"
-
+    if not hasattr(metadata, 'docker_image') or not metadata.docker_image:
+        raise RuntimeError(
+            "Model metadata does not contain a 'docker_image' field. "
+            "Please ensure the model metadata includes the Docker image name."
+        )
+    
+    container = None
     try:
+        container, port = start_docker_container(metadata.docker_image)
+        base_url = f"http://localhost:{port}"
+
         wait_for_container(port)
         request_prediction(base_url, input_payload, timeout)
 
@@ -243,11 +290,33 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
                 logging.debug("Final numeric result: %s", val)
                 return val
             elif code == 4:
-                raise RuntimeError("Model returned a failed status.")
+                # Try to get more error details from container logs
+                logs = container.logs(tail=50).decode(errors="ignore")
+                raise RuntimeError(
+                    f"Model execution failed (status code 4). "
+                    f"Container logs:\n{logs}"
+                )
             elif code == 0:
-                raise RuntimeError("Model did not return a prediction.")
+                raise RuntimeError(
+                    "Model did not process the prediction request. "
+                    "The model may not have received the input data correctly."
+                )
             time.sleep(1)
 
-        raise RuntimeError("Timed out waiting for model to complete.")
+        elapsed = time.time() - start_time
+        raise RuntimeError(
+            f"Model execution timed out after {elapsed:.0f} seconds (timeout: {timeout}s). "
+            f"The model may be taking longer than expected to process the input data."
+        )
+    except Exception as e:
+        # Log container logs for debugging if available
+        if container:
+            try:
+                logs = container.logs(tail=100).decode(errors="ignore")
+                logging.error("Container logs at time of error:\n%s", logs)
+            except:
+                pass
+        raise
     finally:
-        stop_docker_container(container)
+        if container:
+            stop_docker_container(container)

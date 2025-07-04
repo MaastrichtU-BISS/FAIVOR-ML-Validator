@@ -50,7 +50,21 @@ class MetricsCalculator:
         -------
         tuple
             Tuple containing (y_true, y_pred, valid_indices)
+            
+        Raises
+        ------
+        ValueError
+            If predictions and expected outputs have different lengths or are empty
         """
+        if not self.predictions or not self.expected_outputs:
+            raise ValueError("Predictions and expected outputs cannot be empty")
+            
+        if len(self.predictions) != len(self.expected_outputs):
+            raise ValueError(
+                f"Predictions (length={len(self.predictions)}) and expected outputs "
+                f"(length={len(self.expected_outputs)}) must have the same length"
+            )
+        
         valid_indices = []
         y_true_values = []
         y_pred_values = []
@@ -67,8 +81,15 @@ class MetricsCalculator:
                         valid_indices.append(i)
                         y_true_values.append(true_float)
                         y_pred_values.append(pred_float)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                logger.debug(f"Skipping sample {i} due to conversion error: {e}")
                 continue
+        
+        if not valid_indices:
+            raise ValueError(
+                f"No valid numeric data found. Please check that the output field "
+                f"'{self.output_field}' contains numeric values."
+            )
         
         y_true = np.array(y_true_values)
         y_pred = np.array(y_pred_values)
@@ -184,41 +205,84 @@ class MetricsCalculator:
         -------
         dict
             Dictionary containing calculated metrics.
+            
+        Raises
+        ------
+        ValueError
+            If data preparation fails or no valid data is found
+        RuntimeError
+            If metric calculation fails
         """
-        y_true, y_pred, valid_indices = self.prepare_data()
+        try:
+            y_true, y_pred, valid_indices = self.prepare_data()
+        except ValueError as e:
+            raise ValueError(f"Data preparation failed: {str(e)}") from e
+        except Exception as e:
+            raise RuntimeError(
+                f"Unexpected error during data preparation: {str(e)}. "
+                "Please check your data format and try again."
+            ) from e
         
         if len(y_true) == 0:
-            return {"error": "No valid numeric data pairs found for metric calculation"}
+            raise ValueError(
+                "No valid numeric data pairs found for metric calculation. "
+                "Please ensure your data contains numeric values for both predictions and expected outputs."
+            )
             
         model_type = self.metadata_json.get("model_type", "regression")
         
         # sensitive attribute
-        sensitive_values = self.get_sensitive_values(valid_indices)
+        try:
+            sensitive_values = self.get_sensitive_values(valid_indices)
+        except Exception as e:
+            logger.warning(f"Failed to get sensitive values: {e}")
+            sensitive_values = None
+            
         feature_importance = self.metadata_json.get("feature_importance")
         
         all_metrics = {}
         
         # detect appropriate metrics module based on model type
+        if model_type.lower() not in ["classification", "regression"]:
+            logger.warning(f"Unknown model type '{model_type}', defaulting to regression metrics")
+            
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
                         else regression_metrics)
         
         # calc metrics for each category
-        self._compute_metrics_for_category(
-            metrics_module.performance, "performance", 
-            y_true, y_pred, all_metrics
-        )
+        try:
+            self._compute_metrics_for_category(
+                metrics_module.performance, "performance", 
+                y_true, y_pred, all_metrics
+            )
+        except Exception as e:
+            logger.error(f"Failed to compute performance metrics: {e}")
+            all_metrics["performance.error"] = f"Failed to compute performance metrics: {str(e)}"
         
-        self._compute_metrics_for_category(
-            metrics_module.fairness, "fairness", 
-            y_true, y_pred, all_metrics, 
-            sensitive_values=sensitive_values
-        )
+        try:
+            self._compute_metrics_for_category(
+                metrics_module.fairness, "fairness", 
+                y_true, y_pred, all_metrics, 
+                sensitive_values=sensitive_values
+            )
+        except Exception as e:
+            logger.error(f"Failed to compute fairness metrics: {e}")
+            all_metrics["fairness.error"] = f"Failed to compute fairness metrics: {str(e)}"
         
-        self._compute_metrics_for_category(
-            metrics_module.explainability, "explainability", 
-            y_true, y_pred, all_metrics, 
-            feature_importance=feature_importance
-        )
+        try:
+            self._compute_metrics_for_category(
+                metrics_module.explainability, "explainability", 
+                y_true, y_pred, all_metrics, 
+                feature_importance=feature_importance
+            )
+        except Exception as e:
+            logger.error(f"Failed to compute explainability metrics: {e}")
+            all_metrics["explainability.error"] = f"Failed to compute explainability metrics: {str(e)}"
+        
+        if not all_metrics:
+            raise RuntimeError(
+                "Failed to calculate any metrics. Please check your model outputs and data format."
+            )
                 
         return all_metrics    
 
