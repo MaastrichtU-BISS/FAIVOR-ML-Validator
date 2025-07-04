@@ -19,6 +19,49 @@ status_map = {
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
+def is_running_in_container() -> bool:
+    """
+    Detect if the code is running inside a Docker container.
+    
+    Returns
+    -------
+    bool
+        True if running inside a container, False otherwise.
+    """
+    # Check for .dockerenv file
+    if os.path.exists('/.dockerenv'):
+        return True
+    
+    # Check cgroup
+    try:
+        with open('/proc/self/cgroup', 'r') as f:
+            return 'docker' in f.read()
+    except:
+        return False
+
+def get_docker_host() -> str:
+    """
+    Get the appropriate hostname for connecting to Docker-exposed ports.
+    
+    Returns
+    -------
+    str
+        The hostname to use for connections (localhost or host.docker.internal).
+    """
+    # Allow environment variable override
+    docker_host = os.getenv('DOCKER_HOST_INTERNAL')
+    if docker_host:
+        return docker_host
+    
+    # Auto-detect based on environment
+    if is_running_in_container():
+        # When running inside a container, use host.docker.internal
+        # This works on Docker Desktop for Mac/Windows
+        return "host.docker.internal"
+    else:
+        # When running directly on host, use localhost
+        return "localhost"
+
 def find_free_port() -> int:
     """
     Find an available port on the host system.
@@ -157,7 +200,7 @@ def wait_for_container(host_port: int, timeout: Optional[int] = None, container:
     
     while (time.time() - start) < timeout:
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-            if sock.connect_ex(("localhost", host_port)) == 0:
+            if sock.connect_ex((get_docker_host(), host_port)) == 0:
                 logging.debug("Container is responding on port %d", host_port)
                 # Give the container a moment to fully initialize after port is open
                 time.sleep(1)
@@ -341,7 +384,9 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
     container = None
     try:
         container, port = start_docker_container(metadata.docker_image)
-        base_url = f"http://localhost:{port}"
+        docker_host = get_docker_host()
+        base_url = f"http://{docker_host}:{port}"
+        logging.info(f"Connecting to model container at {base_url}")
 
         wait_for_container(port, container=container)
         

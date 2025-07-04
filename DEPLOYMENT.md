@@ -74,6 +74,7 @@ docker run -p 8000:8000 \
 | `DOCKER_CERT_PATH` | Path to Docker certificates | `/certs` |
 | `CONTAINER_STARTUP_TIMEOUT` | Container startup timeout (seconds) | `60` |
 | `DOCKER_EXECUTION_TIMEOUT` | Model execution timeout (seconds) | `360` |
+| `DOCKER_HOST_INTERNAL` | Hostname for Docker connections | Auto-detected |
 
 ## Security Considerations
 
@@ -115,6 +116,16 @@ docker run -p 8000:8000 \
 1. Verify Docker installation on host
 2. Check if Docker daemon is running: `systemctl status docker`
 3. Ensure socket path is correct for your OS
+
+### Error: "Docker container did not become ready" (Networking Issues)
+
+**Cause:** In Docker-in-Docker setups, localhost doesn't route to the host machine.
+
+**Solutions:**
+1. The service auto-detects and uses `host.docker.internal` when running in a container
+2. If auto-detection fails, set `DOCKER_HOST_INTERNAL=host.docker.internal`
+3. For Linux hosts, you may need to add `--add-host host.docker.internal:host-gateway` to docker run
+4. Check container logs to ensure the model is starting correctly
 
 ## Production Deployment
 

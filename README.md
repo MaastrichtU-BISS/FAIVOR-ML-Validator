@@ -49,7 +49,7 @@ The server will be running on [http://localhost:8000](http://localhost:8000). Yo
 
 ## Docker Requirements
 
-**Important:** This service requires Docker access to validate ML models. When running in a container, you must mount the Docker socket. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+**Important:** This service requires Docker access to validate ML models. When running in a container, you must mount the Docker socket. The service automatically handles Docker-in-Docker networking by detecting the environment and using the appropriate hostname. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
 ## Local development
 
