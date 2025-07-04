@@ -3,6 +3,7 @@ import math
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +32,27 @@ app.add_middleware(
 )
 
 
+def create_error_response(
+    status_code: int,
+    error_code: str,
+    message: str,
+    technical_details: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> HTTPException:
+    """Create a structured error response with consistent format"""
+    error_detail = ErrorDetail(
+        code=error_code,
+        message=message,
+        technical_details=technical_details,
+        metadata=metadata or {}
+    )
+    
+    return HTTPException(
+        status_code=status_code,
+        detail=error_detail.model_dump()
+    )
+
+
 @app.get("/")
 async def root():
     return {"message": "Welcome "}
@@ -43,6 +65,19 @@ class ValidationResponse(BaseModel):
     message: str | None = None
     csv_columns: list[str]
     model_input_columns: list[str]
+
+
+class ErrorDetail(BaseModel):
+    """Structured error response for better error handling in clients"""
+    code: str
+    message: str
+    technical_details: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response wrapper"""
+    detail: ErrorDetail
 
 
 @app.post(
@@ -84,8 +119,21 @@ async def validate_csv(
     try:
         md = json.loads(model_metadata)
         metadata = ModelMetadata(md)
+    except json.JSONDecodeError as e:
+        raise create_error_response(
+            status_code=400,
+            error_code="INVALID_METADATA_JSON",
+            message="Invalid metadata JSON format",
+            technical_details=str(e),
+            metadata={"position": e.pos if hasattr(e, 'pos') else None}
+        ) from e
     except Exception as e:
-        raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
+        raise create_error_response(
+            status_code=400,
+            error_code="METADATA_PARSE_ERROR",
+            message="Failed to parse model metadata",
+            technical_details=str(e)
+        ) from e
 
     try:
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -94,7 +142,21 @@ async def validate_csv(
 
         df_data, columns = load_csv(tmp_path)
     except pd.errors.ParserError as e:
-        raise HTTPException(400, f"Invalid CSV format: {e}") from e
+        raise create_error_response(
+            status_code=400,
+            error_code="INVALID_CSV_FORMAT",
+            message="Invalid CSV file format",
+            technical_details=str(e),
+            metadata={"file_name": csv_file.filename}
+        ) from e
+    except Exception as e:
+        raise create_error_response(
+            status_code=400,
+            error_code="CSV_READ_ERROR",
+            message="Failed to read CSV file",
+            technical_details=str(e),
+            metadata={"file_name": csv_file.filename}
+        ) from e
     
     if column_metadata:
         for col in column_metadata:
@@ -102,6 +164,33 @@ async def validate_csv(
                 df_data.rename(columns={col.name_csv: col.name_model}, inplace=True)
 
     validation_result, msg = validate_dataframe_format(metadata, df_data)
+    
+    # If validation failed due to missing columns, provide structured error info
+    if not validation_result and msg and "Missing required columns" in msg:
+        # Extract missing columns from the message
+        import re
+        missing_match = re.search(r"Missing required columns: (.+)", msg)
+        missing_columns = []
+        if missing_match:
+            missing_columns = [col.strip() for col in missing_match.group(1).split(',')]
+        
+        # Return validation response with detailed error info
+        return JSONResponse(
+            content={
+                "valid": False,
+                "message": msg,
+                "csv_columns": columns,
+                "model_input_columns": [
+                    input_obj.input_label for input_obj in metadata.inputs
+                ],
+                "error_details": {
+                    "code": "MISSING_REQUIRED_COLUMNS",
+                    "missing_columns": missing_columns,
+                    "available_columns": columns
+                }
+            },
+            status_code=200  # Return 200 as this is a validation result, not an error
+        )
 
     return JSONResponse(
         content={
@@ -175,9 +264,20 @@ async def retrieve_metrics(
         return performance_metrics + fairness_metrics + explainability_metrics
 
     except json.JSONDecodeError as e:
-        raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
+        raise create_error_response(
+            status_code=400,
+            error_code="INVALID_METADATA_JSON",
+            message="Invalid metadata JSON format",
+            technical_details=str(e),
+            metadata={"position": e.pos if hasattr(e, 'pos') else None}
+        ) from e
     except Exception as e:
-        raise HTTPException(500, f"Failed to retrieve metrics: {e}") from e
+        raise create_error_response(
+            status_code=500,
+            error_code="METRICS_RETRIEVAL_ERROR",
+            message="Failed to retrieve metrics information",
+            technical_details=str(e)
+        ) from e
 
     
 class ModelMetrics(BaseModel):
@@ -225,7 +325,12 @@ async def validate_model(
             else:
                 columns_metadata = []
         except json.JSONDecodeError as exc:
-            raise HTTPException(400, "Invalid column metadata JSON format.") from exc
+            raise create_error_response(
+                status_code=400,
+                error_code="INVALID_COLUMN_METADATA_JSON",
+                message="Invalid column metadata JSON format",
+                technical_details=str(exc)
+            ) from exc
 
         # Load CSV data
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -239,19 +344,70 @@ async def validate_model(
         # Execute model and get predictions
         try:
             predictions = execute_model(metadata, inputs)
+        except RuntimeError as e:
+            # Handle specific Docker/container errors
+            error_msg = str(e)
+            if "timeout" in error_msg.lower():
+                raise create_error_response(
+                    status_code=503,
+                    error_code="MODEL_EXECUTION_TIMEOUT",
+                    message="Model execution timed out",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name, "timeout": "300s"}
+                ) from e
+            elif "docker" in error_msg.lower() or "container" in error_msg.lower():
+                raise create_error_response(
+                    status_code=503,
+                    error_code="CONTAINER_EXECUTION_ERROR",
+                    message="Failed to execute model in Docker container",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name}
+                ) from e
+            else:
+                raise create_error_response(
+                    status_code=500,
+                    error_code="MODEL_EXECUTION_FAILED",
+                    message="Model execution failed",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name}
+                ) from e
         except Exception as e:
-            raise HTTPException(500, f"Model execution failed: {e}") from e
+            raise create_error_response(
+                status_code=500,
+                error_code="MODEL_EXECUTION_ERROR",
+                message="Unexpected error during model execution",
+                technical_details=str(e),
+                metadata={"model_name": model_name}
+            ) from e
 
         # Initialize MetricsCalculator
-        metrics_calculator = MetricsCalculator(
-            model_metadata=metadata,
-            predictions=predictions,
-            expected_outputs=expected_outputs,
-            inputs=inputs,
-        )
+        try:
+            metrics_calculator = MetricsCalculator(
+                model_metadata=metadata,
+                predictions=predictions,
+                expected_outputs=expected_outputs,
+                inputs=inputs,
+            )
+        except Exception as e:
+            raise create_error_response(
+                status_code=500,
+                error_code="METRICS_CALCULATOR_INIT_ERROR",
+                message="Failed to initialize metrics calculator",
+                technical_details=str(e),
+                metadata={"model_name": model_name}
+            ) from e
 
         # Calculate metrics
-        overall_metrics = metrics_calculator.calculate_metrics()
+        try:
+            overall_metrics = metrics_calculator.calculate_metrics()
+        except Exception as e:
+            raise create_error_response(
+                status_code=500,
+                error_code="METRICS_CALCULATION_ERROR",
+                message="Failed to calculate model metrics",
+                technical_details=str(e),
+                metadata={"model_name": model_name}
+            ) from e
 
         # Calculate threshold metrics (if applicable)
         
@@ -283,9 +439,23 @@ async def validate_model(
         )
 
     except json.JSONDecodeError as e:
-        raise HTTPException(400, f"Invalid metadata JSON: {e}") from e
+        raise create_error_response(
+            status_code=400,
+            error_code="INVALID_METADATA_JSON",
+            message="Invalid model metadata JSON format",
+            technical_details=str(e),
+            metadata={"position": e.pos if hasattr(e, 'pos') else None}
+        ) from e
+    except HTTPException:
+        # Re-raise HTTPException as-is (already structured)
+        raise
     except Exception as e:
-        raise HTTPException(500, f"Model validation failed: {e}") from e
+        raise create_error_response(
+            status_code=500,
+            error_code="MODEL_VALIDATION_FAILED",
+            message="Model validation failed",
+            technical_details=str(e)
+        ) from e
 
 
 def sanitize_floats(data: dict | list | float) -> dict | list | float | None:
