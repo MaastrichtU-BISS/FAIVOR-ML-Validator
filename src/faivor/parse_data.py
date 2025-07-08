@@ -90,7 +90,47 @@ def detect_delimiter(csv_path: Path) -> str:
             return dialect.delimiter
     except (FileNotFoundError, IOError) as e:
         raise IOError(f"Could not open CSV file: {e}") from e
-    
+
+def detect_decimal(csv_path: Path) -> str:
+    """
+    Detect the decimal separator used in a CSV file.
+
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the CSV file.
+
+    Returns
+    -------
+    str
+        The detected decimal separator (comma or dot).
+
+    Raises
+    ------
+    IOError
+        If the file cannot be opened.
+    """
+    try:
+        delimiter = detect_delimiter(csv_path)
+        with open(csv_path, "r", encoding="utf-8") as f:
+            # Skip header
+            header = f.readline()
+            # Read the second line (first data row)
+            line = f.readline()
+            if not line:
+                raise ValueError("CSV file does not contain data rows to detect decimal separator")
+            fields = line.strip().split(delimiter)
+            # Check each field for decimal separator
+            comma_count = sum(1 for field in fields if "," in field and "." not in field)
+            dot_count = sum(1 for field in fields if "." in field and "," not in field)
+            if comma_count > dot_count:
+                return ","
+            elif dot_count > comma_count:
+                return "."
+            else:
+                raise ValueError("Could not determine decimal separator")
+    except (FileNotFoundError, IOError) as e:
+        raise IOError(f"Could not open CSV file: {e}") from e
 
 def load_csv(csv_path: Path) -> tuple[pd.DataFrame, List[str]]:
     """
@@ -113,7 +153,8 @@ def load_csv(csv_path: Path) -> tuple[pd.DataFrame, List[str]]:
         If the CSV cannot be parsed.
     """
     delimiter = detect_delimiter(csv_path)
-    df = pd.read_csv(csv_path, sep=delimiter)
+    decimal = detect_decimal(csv_path)
+    df = pd.read_csv(csv_path, sep=delimiter, decimal=decimal)
     return df, df.columns.tolist()
 
 

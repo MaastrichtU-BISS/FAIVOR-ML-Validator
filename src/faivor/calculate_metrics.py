@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
 
 from faivor.model_metadata import ModelMetadata
-from faivor.parse_data import detect_delimiter
+from faivor.parse_data import detect_delimiter, detect_decimal
 from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
 from faivor.utils import convert_to_json_serializable, safe_divide
@@ -485,7 +485,8 @@ class MetricsCalculator:
         """
         # handle delimiter and read the CSV file
         delimiter = detect_delimiter(csv_path)
-        df = pd.read_csv(csv_path, sep=delimiter)
+        decimal = detect_decimal(csv_path)
+        df = pd.read_csv(csv_path, sep=delimiter, decimal=decimal)
         
         y_true, y_pred, valid_indices = self.prepare_data()
         
