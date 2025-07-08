@@ -120,15 +120,11 @@ def detect_decimal(csv_path: Path) -> str:
             if not line:
                 raise ValueError("CSV file does not contain data rows to detect decimal separator")
             fields = line.strip().split(delimiter)
-            # Check each field for decimal separator
-            comma_count = sum(1 for field in fields if "," in field and "." not in field)
-            dot_count = sum(1 for field in fields if "." in field and "," not in field)
-            if comma_count > dot_count:
-                return ","
-            elif dot_count > comma_count:
-                return "."
-            else:
-                raise ValueError("Could not determine decimal separator")
+            # Assume dot as decimal unless a comma is found in a value
+            for field in fields:
+                if "," in field and "." not in field:
+                    return ","
+            return "."
     except (FileNotFoundError, IOError) as e:
         raise IOError(f"Could not open CSV file: {e}") from e
 
