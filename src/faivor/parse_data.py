@@ -150,7 +150,8 @@ def validate_dataframe_format(
 def create_json_payloads(
     metadata: ModelMetadata,
     csv_path: Path,
-    column_metadata: list[ColumnMetadata]
+    column_metadata: list[ColumnMetadata],
+    complete_cases: bool = True
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Create JSON payloads for input and output data based on provided metadata and CSV file.
@@ -194,6 +195,10 @@ def create_json_payloads(
 
     input_cols = [inp.input_label for inp in metadata.inputs]
     output_col = metadata.output
+
+    if complete_cases:
+        # Make a subset of complete cases for inputs and outputs
+        df = df.dropna(subset=input_cols + [output_col])
 
     inputs = df[input_cols].to_dict(orient="records")
     outputs = df[[output_col]].to_dict(orient="records")
