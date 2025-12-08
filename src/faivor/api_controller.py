@@ -343,7 +343,9 @@ async def validate_model(
 
         # Execute model and get predictions
         try:
-            predictions = execute_model(metadata, inputs)
+            execution_result = execute_model(metadata, inputs)
+            predictions = execution_result["predictions"]
+            docker_image_sha256 = execution_result.get("docker_image_sha256")
         except RuntimeError as e:
             # Handle specific Docker/container errors
             error_msg = str(e)
@@ -435,6 +437,7 @@ async def validate_model(
             content={
                 "model_name": model_name,
                 "metrics": sanitized_metrics,
+                "docker_image_sha256": docker_image_sha256,
             }
         )
 

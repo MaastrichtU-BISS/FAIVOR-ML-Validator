@@ -75,7 +75,7 @@ def find_free_port() -> int:
         s.bind(("", 0))
         return s.getsockname()[1]
 
-def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[docker.models.containers.Container, int]:
+def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[docker.models.containers.Container, int, Optional[str]]:
     """
     Pull the Docker image (if needed) and start the container on a random free port.
 
@@ -136,6 +136,15 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
     except Exception as exc:
         logging.warning("Could not pull image %s, continuing locally: %s", image_name, exc)
 
+    # Get the image SHA256 digest
+    image_sha256 = None
+    try:
+        image = client.images.get(image_name)
+        image_sha256 = image.id  # Returns format like "sha256:abc123..."
+        logging.debug("Image SHA256: %s", image_sha256)
+    except Exception as exc:
+        logging.warning("Could not get image SHA256: %s", exc)
+
     host_port = find_free_port()
     logging.debug("Launching container on host port %d...", host_port)
 
@@ -171,7 +180,7 @@ def start_docker_container(image_name: str, internal_port: int = 8000) -> Tuple[
             f"Container logs:\n{logs[:500]}..." if len(logs) > 500 else f"Container logs:\n{logs}"
         )
 
-    return container, host_port
+    return container, host_port, image_sha256
 
 def wait_for_container(host_port: int, timeout: Optional[int] = None, container: Optional[docker.models.containers.Container] = None) -> None:
     """
@@ -346,7 +355,7 @@ def stop_docker_container(container: docker.models.containers.Container) -> None
     logging.debug("Stopping container...")
     container.stop()
 
-def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 360) -> list[float]:
+def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 360) -> dict:
     """
     Multi-step model execution:
       1) Start container.
@@ -367,8 +376,10 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
 
     Returns
     -------
-    list[float]
-        Numeric prediction result(s).
+    dict
+        Dictionary containing:
+        - 'predictions': list[float] - Numeric prediction result(s).
+        - 'docker_image_sha256': Optional[str] - SHA256 digest of the Docker image used.
 
     Raises
     ------
@@ -382,8 +393,9 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
         )
     
     container = None
+    image_sha256 = None
     try:
-        container, port = start_docker_container(metadata.docker_image)
+        container, port, image_sha256 = start_docker_container(metadata.docker_image)
         docker_host = get_docker_host()
         base_url = f"http://{docker_host}:{port}"
         logging.info(f"Connecting to model container at {base_url}")
@@ -412,7 +424,7 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
             if code == 3:
                 val = retrieve_result(base_url)
                 logging.debug("Final numeric result: %s", val)
-                return val
+                return {"predictions": val, "docker_image_sha256": image_sha256}
             elif code == 4:
                 # Try to get more error details from container logs
                 logs = container.logs(tail=50).decode(errors="ignore")
