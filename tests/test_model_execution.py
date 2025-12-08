@@ -23,12 +23,15 @@ def test_model_execution(shared_datadir, model_name):
     
     inputs, _ = create_json_payloads(model_metadata, csv_path, column_metadata)
     try:
-        prediction = execute_model(model_metadata, inputs)
+        result = execute_model(model_metadata, inputs)
     except Exception as e:
         raise RuntimeError(f"Model execution failed: {e}") from e
 
-    assert prediction is not None, "Model execution should return a prediction."
-    assert isinstance(prediction, list), "Prediction result should be a dictionary."
+    assert result is not None, "Model execution should return a result."
+    assert isinstance(result, dict), "Result should be a dictionary."
+    assert "predictions" in result, "Result should contain 'predictions' key."
+    assert isinstance(result["predictions"], list), "Predictions should be a list."
+    assert "docker_image_sha256" in result, "Result should contain 'docker_image_sha256' key."
 
 @pytest.fixture
 def model_info(shared_datadir, model_name):
@@ -77,10 +80,11 @@ def model_predictions(model_info, input_data):
     model_metadata = model_info["model_metadata"]
     model_name = model_info["model_name"]
     inputs, _ = input_data
-    
+
     try:
-        predictions = execute_model(model_metadata, inputs)
-        return predictions
+        result = execute_model(model_metadata, inputs)
+        # execute_model now returns a dict with 'predictions' and 'docker_image_sha256'
+        return result["predictions"]
     except Exception as e:
         pytest.fail(f"Model execution failed for {model_name}: {e}")
 
