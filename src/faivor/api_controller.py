@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
+from importlib.metadata import version as get_version
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,17 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import ColumnMetadata, create_json_payloads, load_csv, validate_dataframe_format
 from faivor.run_docker import execute_model
 
-app = FastAPI()
+# Get version from package metadata
+try:
+    __version__ = get_version("FAIVOR")
+except Exception:
+    __version__ = "0.1.0"  # Fallback version
+
+app = FastAPI(
+    title="FAIVOR ML Validator",
+    version=__version__,
+    description="FAIRmodels validator API"
+)
 
 # Add CORS middleware to allow requests from the frontend
 app.add_middleware(
@@ -55,7 +66,16 @@ def create_error_response(
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome "}
+    return {"message": "Welcome to FAIVOR ML Validator", "version": __version__}
+
+
+@app.get("/version")
+async def get_api_version():
+    """Get the API version information."""
+    return {
+        "name": "FAIVOR ML Validator",
+        "version": __version__
+    }
 
 class ListColumnMetadataModel(BaseModel):
     columns: list[ColumnMetadata]
