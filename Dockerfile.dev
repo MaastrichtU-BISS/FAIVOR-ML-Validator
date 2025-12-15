@@ -1,0 +1,26 @@
+# Development Dockerfile for FAIVOR ML Validator
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy dependency files and source for poetry install
+COPY pyproject.toml poetry.lock README.md /app/
+COPY ./src /app/src
+
+# Install Poetry
+RUN pip install poetry
+
+# Configure Poetry to not create virtual environments
+RUN poetry config virtualenvs.create false
+
+# Install project dependencies
+RUN poetry install
+
+# Set the PYTHONPATH environment variable
+ENV PYTHONPATH=/app/src
+
+# Expose the port where the FastAPI app will run
+EXPOSE 8000
+
+# Run with --reload for hot reloading during development
+CMD ["poetry", "run", "uvicorn", "src.faivor.api_controller:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
