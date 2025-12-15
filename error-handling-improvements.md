@@ -88,16 +88,22 @@ This document outlines the error handling improvements made to the FAIVOR-ML-Val
 
 ## Error Code Reference
 
+### Client Errors (4xx)
 - `INVALID_METADATA_JSON`: Malformed JSON in metadata
 - `METADATA_PARSE_ERROR`: Valid JSON but invalid metadata structure
 - `INVALID_CSV_FORMAT`: CSV parsing errors
 - `CSV_READ_ERROR`: File reading issues
 - `MISSING_REQUIRED_COLUMNS`: Required columns not found in CSV
-- `CONTAINER_EXECUTION_ERROR`: Docker container failures
-- `MODEL_EXECUTION_TIMEOUT`: Execution time exceeded
-- `MODEL_EXECUTION_FAILED`: Model returned error status
-- `METRICS_CALCULATION_ERROR`: Failed to compute metrics
-- `METRICS_CALCULATOR_INIT_ERROR`: Failed to initialize calculator
+- `DATA_VALIDATION_ERROR`: Model rejected input data (invalid/out-of-range values)
+- `MODEL_PROCESSING_ERROR`: Model failed to process input data (status code 4)
+
+### Server Errors (5xx)
+- `CONTAINER_EXECUTION_ERROR`: Docker container failures (503)
+- `MODEL_EXECUTION_TIMEOUT`: Execution time exceeded (503)
+- `MODEL_EXECUTION_FAILED`: Model returned error status (500)
+- `MODEL_EXECUTION_ERROR`: Unexpected error during execution (500)
+- `METRICS_CALCULATION_ERROR`: Failed to compute metrics (500)
+- `METRICS_CALCULATOR_INIT_ERROR`: Failed to initialize calculator (500)
 
 ## Testing Recommendations
 

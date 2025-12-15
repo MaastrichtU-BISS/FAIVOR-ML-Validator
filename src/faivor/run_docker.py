@@ -273,12 +273,32 @@ def request_prediction(base_url: str, payload: list[dict[str, Any]], timeout: in
 
     Raises
     ------
-    requests.exceptions.HTTPError
-        If the response status is not successful.
+    RuntimeError
+        If the response status is not successful, with detailed error information.
     """
     logging.debug("Sending payload to %s/predict: %s", base_url, payload)
     resp = requests.post(f"{base_url}/predict", json=payload, timeout=timeout)
-    resp.raise_for_status()
+
+    if not resp.ok:
+        # Try to get error details from response body
+        error_body = ""
+        try:
+            error_body = resp.text
+        except Exception:
+            pass
+
+        # Determine if this is a validation/data error (4xx) or server error (5xx)
+        if 400 <= resp.status_code < 500:
+            raise ValueError(
+                f"Model rejected the input data (HTTP {resp.status_code}). "
+                f"This may indicate invalid or out-of-range values in your data. "
+                f"Model response: {error_body[:1000]}"
+            )
+        else:
+            raise RuntimeError(
+                f"Model container returned error (HTTP {resp.status_code}). "
+                f"Model response: {error_body[:1000]}"
+            )
 
 def get_status_code(base_url: str) -> int:
     """
@@ -408,6 +428,9 @@ def execute_model(metadata: Any, input_payload: list[dict[str, Any]], timeout = 
             try:
                 request_prediction(base_url, input_payload, timeout)
                 break
+            except ValueError:
+                # Data validation errors should not be retried - re-raise immediately
+                raise
             except requests.exceptions.ConnectionError as e:
                 if attempt < max_retries - 1:
                     logging.warning(f"Connection failed on attempt {attempt + 1}, retrying in 2 seconds...")
