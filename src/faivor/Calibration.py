@@ -2,7 +2,6 @@ import logging
 from typing import  Dict, Any, Optional, Tuple, List
 import numpy as np
 import pandas as pd
-import roc
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.metrics import roc_curve,roc_auc_score,confusion_matrix
@@ -204,17 +203,24 @@ class Calibration:
        #Return m2 predicted probabilities
        return self.data["m2_pred"]
 
-   def fit_m3_model_revision(self, covariate_columns: Optional[List[str]] = None) -> pd.Series:
+   def _resolve_covariate_columns(self, covariate_columns: Optional[List[str]] = None) -> List[str]:
        """
-       Fit m3: refit with original covariates if available in input data
+       Return the given covariate columns, or default to all numeric predictor columns in the table
        """
-       #Pick predictor columns (if not specified by user)
        if covariate_columns is None:
            #Exclude columns that are not predictors
            exclude_columns = {"predictions", "m0_pred", "m1_pred", "m2_pred", "m3_pred", self.outcome_col,"linear_predictor"}
 
            #Keep every numeric columns in the tabel that is not in the exclude list and store as covariates
            covariate_columns = [col for col in self.data.select_dtypes(include=[np.number]).columns if col not in exclude_columns]
+       return covariate_columns
+
+   def fit_m3_model_revision(self, covariate_columns: Optional[List[str]] = None) -> pd.Series:
+       """
+       Fit m3: refit with original covariates if available in input data
+       """
+       #Pick predictor columns (if not specified by user)
+       covariate_columns = self._resolve_covariate_columns(covariate_columns)
 
        if not covariate_columns:
            raise ValueError("No covariate columns provided to fit m3")
@@ -394,7 +400,10 @@ class Calibration:
            "selected_model": selected_model,
            "statistics": selection_stats
        },
-           "roc_metrics": roc_metrics
+           "roc_metrics": {
+               name: {key: (val.tolist() if isinstance(val, np.ndarray) else val) for key, val in metrics.items()}
+               for name, metrics in roc_metrics.items()
+           }
        }
 
 
@@ -407,6 +416,7 @@ class Calibration:
        roc_metrics = self.compute_roc_auc()
        _, selection_stats = self.compute_closed_test_selection()
        rows = []
+       covariate_columns = self._resolve_covariate_columns(covariate_columns)
        for var in covariate_columns:
            method3_val = (
                self._fitted_m3.params[var]
