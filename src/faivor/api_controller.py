@@ -11,9 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # pylint: disable=no-name-in-module
+import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 
+from faivor.Calibration import Calibration
 from faivor.calculate_metrics import MetricsCalculator
 from faivor.metrics.classification import classification_metrics
 from faivor.metrics.regression import regression_metrics
@@ -306,6 +308,78 @@ class ModelMetrics(BaseModel):
 
 
 
+def run_model_with_error_handling(metadata: ModelMetadata, inputs: Any, model_name: str) -> dict:
+    """Execute the model and translate execution failures into structured HTTP errors."""
+    try:
+        return execute_model(metadata, inputs)
+    except ValueError as e:
+        # ValueError indicates data validation errors (invalid/out-of-range values)
+        # This is a client error (400), not a server error
+        error_msg = str(e)
+        raise create_error_response(
+            status_code=400,
+            error_code="DATA_VALIDATION_ERROR",
+            message="The model rejected the input data due to validation errors",
+            technical_details=error_msg,
+            metadata={
+                "model_name": model_name,
+                "error_type": "data_validation",
+                "user_guidance": "Check that your data values are within the expected ranges for this model. "
+                               "Review the model documentation for valid input constraints."
+            }
+        ) from e
+    except RuntimeError as e:
+        # Handle specific Docker/container errors
+        error_msg = str(e)
+        if "timeout" in error_msg.lower():
+            raise create_error_response(
+                status_code=503,
+                error_code="MODEL_EXECUTION_TIMEOUT",
+                message="Model execution timed out",
+                technical_details=error_msg,
+                metadata={"model_name": model_name, "timeout": "300s"}
+            ) from e
+        elif "docker" in error_msg.lower() or "container" in error_msg.lower():
+            raise create_error_response(
+                status_code=503,
+                error_code="CONTAINER_EXECUTION_ERROR",
+                message="Failed to execute model in Docker container",
+                technical_details=error_msg,
+                metadata={"model_name": model_name}
+            ) from e
+        elif "status code 4" in error_msg.lower() or "prediction failed" in error_msg.lower():
+            # Model execution failed (status 4) - likely a data processing error within the model
+            raise create_error_response(
+                status_code=400,
+                error_code="MODEL_PROCESSING_ERROR",
+                message="The model failed to process the input data",
+                technical_details=error_msg,
+                metadata={
+                    "model_name": model_name,
+                    "error_type": "model_processing",
+                    "user_guidance": "The model encountered an error while processing your data. "
+                                   "This may be due to invalid values, missing data, or data format issues. "
+                                   "Check the technical details below for more information."
+                }
+            ) from e
+        else:
+            raise create_error_response(
+                status_code=500,
+                error_code="MODEL_EXECUTION_FAILED",
+                message="Model execution failed",
+                technical_details=error_msg,
+                metadata={"model_name": model_name}
+            ) from e
+    except Exception as e:
+        raise create_error_response(
+            status_code=500,
+            error_code="MODEL_EXECUTION_ERROR",
+            message="Unexpected error during model execution",
+            technical_details=str(e),
+            metadata={"model_name": model_name}
+        ) from e
+
+
 @app.post(
     "/validate-model",
     summary="Validate ML model",
@@ -362,76 +436,9 @@ async def validate_model(
         inputs, expected_outputs = create_json_payloads(metadata, tmp_path, columns_metadata)
 
         # Execute model and get predictions
-        try:
-            execution_result = execute_model(metadata, inputs)
-            predictions = execution_result["predictions"]
-            docker_image_sha256 = execution_result.get("docker_image_sha256")
-        except ValueError as e:
-            # ValueError indicates data validation errors (invalid/out-of-range values)
-            # This is a client error (400), not a server error
-            error_msg = str(e)
-            raise create_error_response(
-                status_code=400,
-                error_code="DATA_VALIDATION_ERROR",
-                message="The model rejected the input data due to validation errors",
-                technical_details=error_msg,
-                metadata={
-                    "model_name": model_name,
-                    "error_type": "data_validation",
-                    "user_guidance": "Check that your data values are within the expected ranges for this model. "
-                                   "Review the model documentation for valid input constraints."
-                }
-            ) from e
-        except RuntimeError as e:
-            # Handle specific Docker/container errors
-            error_msg = str(e)
-            if "timeout" in error_msg.lower():
-                raise create_error_response(
-                    status_code=503,
-                    error_code="MODEL_EXECUTION_TIMEOUT",
-                    message="Model execution timed out",
-                    technical_details=error_msg,
-                    metadata={"model_name": model_name, "timeout": "300s"}
-                ) from e
-            elif "docker" in error_msg.lower() or "container" in error_msg.lower():
-                raise create_error_response(
-                    status_code=503,
-                    error_code="CONTAINER_EXECUTION_ERROR",
-                    message="Failed to execute model in Docker container",
-                    technical_details=error_msg,
-                    metadata={"model_name": model_name}
-                ) from e
-            elif "status code 4" in error_msg.lower() or "prediction failed" in error_msg.lower():
-                # Model execution failed (status 4) - likely a data processing error within the model
-                raise create_error_response(
-                    status_code=400,
-                    error_code="MODEL_PROCESSING_ERROR",
-                    message="The model failed to process the input data",
-                    technical_details=error_msg,
-                    metadata={
-                        "model_name": model_name,
-                        "error_type": "model_processing",
-                        "user_guidance": "The model encountered an error while processing your data. "
-                                       "This may be due to invalid values, missing data, or data format issues. "
-                                       "Check the technical details below for more information."
-                    }
-                ) from e
-            else:
-                raise create_error_response(
-                    status_code=500,
-                    error_code="MODEL_EXECUTION_FAILED",
-                    message="Model execution failed",
-                    technical_details=error_msg,
-                    metadata={"model_name": model_name}
-                ) from e
-        except Exception as e:
-            raise create_error_response(
-                status_code=500,
-                error_code="MODEL_EXECUTION_ERROR",
-                message="Unexpected error during model execution",
-                technical_details=str(e),
-                metadata={"model_name": model_name}
-            ) from e
+        execution_result = run_model_with_error_handling(metadata, inputs, model_name)
+        predictions = execution_result["predictions"]
+        docker_image_sha256 = execution_result.get("docker_image_sha256")
 
         # Initialize MetricsCalculator
         try:
@@ -508,6 +515,118 @@ async def validate_model(
             status_code=500,
             error_code="MODEL_VALIDATION_FAILED",
             message="Model validation failed",
+            technical_details=str(e)
+        ) from e
+
+
+@app.post(
+    "/calibrate-model",
+    summary="Run calibration and model-update analysis",
+    description=(
+        "Runs the calibration update methods (m0: original model, m1: intercept recalibration, "
+        "m2: logistic recalibration, m3: model revision) on the model predictions. Returns the predictions, "
+        "log-likelihoods, closed-testing model selection and ROC metrics. "
+        "Accepts the same inputs as `/validate-model`."
+    ),
+)
+async def calibrate_model(
+    model_metadata: str = Form(
+        ...,
+        description="FAIR model metadata JSON, containing `inputs` (list of `{input_label}`) and `output` field",
+    ),
+    csv_file: UploadFile = File(
+        ..., description="CSV file with input data and observed outcomes; delimiter is auto-detected"
+    ),
+    column_metadata: str | None = Form(
+        None,
+        description="Metadata JSON string, containing naming mapping for the CSV columns.",
+    ),
+) -> JSONResponse:
+    """
+    Run calibration analysis for a model with metadata and CSV data.
+
+    Plotting utilities of `Calibration` are intended for local/offline analysis
+    (see `Runscript.py`) and are not exposed over the API.
+    """
+    try:
+        md = json.loads(model_metadata)
+        metadata = ModelMetadata(md)
+        model_name = metadata.model_name or "unknown_model"
+
+        try:
+            if column_metadata:
+                col_metadata = json.loads(column_metadata)
+                columns_metadata: list[ColumnMetadata] = ColumnMetadata.load_from_dict(col_metadata)
+            else:
+                columns_metadata = []
+        except json.JSONDecodeError as exc:
+            raise create_error_response(
+                status_code=400,
+                error_code="INVALID_COLUMN_METADATA_JSON",
+                message="Invalid column metadata JSON format",
+                technical_details=str(exc)
+            ) from exc
+
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                shutil.copyfileobj(csv_file.file, tmp)
+                tmp_path = Path(tmp.name)
+
+            inputs, expected_outputs = create_json_payloads(metadata, tmp_path, columns_metadata)
+        except pd.errors.ParserError as e:
+            raise create_error_response(
+                status_code=400,
+                error_code="INVALID_CSV_FORMAT",
+                message="Invalid CSV file format",
+                technical_details=str(e),
+                metadata={"file_name": csv_file.filename}
+            ) from e
+        except Exception as e:
+            raise create_error_response(
+                status_code=400,
+                error_code="CSV_READ_ERROR",
+                message="Failed to read CSV file",
+                technical_details=str(e),
+                metadata={"file_name": csv_file.filename}
+            ) from e
+
+        execution_result = run_model_with_error_handling(metadata, inputs, model_name)
+
+        try:
+            feature_data = pd.DataFrame(inputs).select_dtypes(include=[np.number])
+            calibration = Calibration.from_docker_output(
+                docker_result=execution_result,
+                expected_outputs=expected_outputs,
+                outcome_col=metadata.output,
+                input_data=feature_data,
+            )
+            summary = calibration.get_calibration_summary()
+        except Exception as e:
+            raise create_error_response(
+                status_code=500,
+                error_code="CALIBRATION_ERROR",
+                message="Failed to run calibration analysis",
+                technical_details=str(e),
+                metadata={"model_name": model_name}
+            ) from e
+
+        return JSONResponse(content=sanitize_floats(summary))
+
+    except json.JSONDecodeError as e:
+        raise create_error_response(
+            status_code=400,
+            error_code="INVALID_METADATA_JSON",
+            message="Invalid model metadata JSON format",
+            technical_details=str(e),
+            metadata={"position": e.pos if hasattr(e, 'pos') else None}
+        ) from e
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise create_error_response(
+            status_code=500,
+            error_code="CALIBRATION_ERROR",
+            message="Failed to run calibration analysis",
             technical_details=str(e)
         ) from e
 
