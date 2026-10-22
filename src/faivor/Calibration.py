@@ -383,6 +383,36 @@ class Calibration:
      return results
 
 
+   def get_model_coefficients(self, covariate_columns: Optional[List[str]] = None) -> Dict[str, Any]:
+       """
+       Return the fitted coefficients for each recalibration method.
+       """
+       self.drop_missing_predictions()
+       self.get_predictions(covariate_columns=covariate_columns)
+       covariate_columns = self._resolve_covariate_columns(covariate_columns)
+
+       def get_coefficient(model, name):
+           if model is not None and name in model.params.index:
+               return float(model.params[name])
+           return None
+
+       return {
+           "m1": {
+               "intercept": get_coefficient(self._fitted_m1, "Intercept"),
+           },
+           "m2": {
+               "intercept": get_coefficient(self._fitted_m2, "Intercept"),
+               "slope": get_coefficient(self._fitted_m2, "linear_predictor"),
+           },
+           "m3": {
+               "intercept": get_coefficient(self._fitted_m3, "Intercept"),
+               "covariates": {
+                   column: get_coefficient(self._fitted_m3, column)
+                   for column in covariate_columns
+               },
+           },
+       }
+
    def get_calibration_summary(self, covariate_columns: Optional[List[str]] = None) -> Dict[str,Any]:
        """
        Runs the full analysis (log-likelihoods, model selection, AUC), returning results in a dictionary
@@ -392,6 +422,8 @@ class Calibration:
        loglikelihoods = self.compute_loglikelihoods()
        selected_model, selection_stats = self.compute_closed_test_selection()
        roc_metrics = self.compute_roc_auc()
+       calibration_curve_data = self.compute_calibration_curve()
+       coefficients = self.get_model_coefficients(covariate_columns=covariate_columns)
 
        return {
            "predictions": predictions.to_dict(orient="list"),
@@ -403,7 +435,12 @@ class Calibration:
            "roc_metrics": {
                name: {key: (val.tolist() if isinstance(val, np.ndarray) else val) for key, val in metrics.items()}
                for name, metrics in roc_metrics.items()
-           }
+           },
+           "calibration_curve": {
+               name: {key: (val.tolist() if isinstance(val, np.ndarray) else val) for key, val in metrics.items()}
+               for name, metrics in calibration_curve_data.items()
+           },
+           "coefficients": coefficients,
        }
 
 
