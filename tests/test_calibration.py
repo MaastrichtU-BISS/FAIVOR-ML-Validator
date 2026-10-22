@@ -14,7 +14,14 @@ from faivor.model_metadata import ModelMetadata
 client = TestClient(app)
 
 OUTCOME = "outcome"
-SUMMARY_KEYS = {"predictions", "log_likelihoods", "model_selection", "roc_metrics"}
+SUMMARY_KEYS = {
+    "predictions",
+    "log_likelihoods",
+    "model_selection",
+    "roc_metrics",
+    "calibration_curve",
+    "coefficients",
+}
 
 
 def make_data(n: int = 200, seed: int = 0):
@@ -50,6 +57,41 @@ def test_get_calibration_summary_keys(calibration: Calibration):
     assert SUMMARY_KEYS <= set(summary)
     assert summary["model_selection"]["selected_model"] in {"m0", "m1", "m2", "m3"}
     assert set(summary["roc_metrics"]) == {"m0", "m1", "m2", "m3"}
+    for metrics in summary["roc_metrics"].values():
+        assert set(metrics) == {"fpr", "tpr", "thresholds", "auc"}
+        assert all(isinstance(metrics[key], list) for key in ("fpr", "tpr", "thresholds"))
+    assert set(summary["calibration_curve"]) == {"m0", "m1", "m2", "m3"}
+    for curve in summary["calibration_curve"].values():
+        assert set(curve) == {"observed_probability", "predicted_probability"}
+        assert isinstance(curve["observed_probability"], list)
+        assert isinstance(curve["predicted_probability"], list)
+    assert set(summary["coefficients"]) == {"m1", "m2", "m3"}
+
+
+def test_get_model_coefficients(calibration: Calibration):
+    coefficients = calibration.get_model_coefficients()
+
+    assert set(coefficients) == {"m1", "m2", "m3"}
+    assert set(coefficients["m1"]) == {"intercept"}
+    assert set(coefficients["m2"]) == {"intercept", "slope"}
+    assert set(coefficients["m3"]) == {"intercept", "covariates"}
+    assert set(coefficients["m3"]["covariates"]) == {"x1", "x2"}
+    assert all(
+        isinstance(value, float)
+        for model in (coefficients["m1"], coefficients["m2"])
+        for value in model.values()
+    )
+    assert isinstance(coefficients["m3"]["intercept"], float)
+    assert all(isinstance(value, float) for value in coefficients["m3"]["covariates"].values())
+    assert coefficients["m1"]["intercept"] == pytest.approx(
+        calibration._fitted_m1.params["Intercept"]
+    )
+    assert coefficients["m2"]["slope"] == pytest.approx(
+        calibration._fitted_m2.params["linear_predictor"]
+    )
+    assert coefficients["m3"]["covariates"]["x1"] == pytest.approx(
+        calibration._fitted_m3.params["x1"]
+    )
 
 
 @pytest.mark.parametrize("covariate_columns", [["x1", "x2"], None])
