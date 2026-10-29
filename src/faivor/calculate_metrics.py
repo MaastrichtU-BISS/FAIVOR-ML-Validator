@@ -493,7 +493,7 @@ class MetricsCalculator:
         if len(y_true) == 0:
             return {"error": "No valid numeric data pairs found for subgroup metric calculation"}
         
-        model_type = self.metadata_json.get("model_type", "regression")
+        model_type = self.metadata_json.get("model_type", "classification")
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
                         else regression_metrics)
         

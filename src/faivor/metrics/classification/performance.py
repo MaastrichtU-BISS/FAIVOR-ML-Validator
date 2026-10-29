@@ -59,3 +59,20 @@ def specificity(y_true, y_pred) -> float:
     """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     return skm.recall_score(y_true,y_pred,pos_label=0)
+
+def sensitivity(y_true, y_pred) -> float:
+    """
+    Calculates sensitivity for classification.
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        The true target values.
+    y_pred : array-like of shape (n_samples,)
+
+    Returns
+    -------
+    float
+        The sensitivity.
+    """
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    return skm.recall_score(y_true,y_pred)

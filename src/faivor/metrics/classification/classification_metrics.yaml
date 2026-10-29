@@ -99,6 +99,11 @@ performance:
     description: Compute specificity.
     func: faivor.metrics.classification.performance.specificity
     is_torch: false
+  - function_name: sensitivity
+    regular_name: Sencificity
+    description: Compute sensitivity.
+    func: faivor.metrics.classification.performance.sensitivity
+    is_torch: false
   - function_name: calibration_curve
     regular_name: Calibration Curve
     description: Compute Calibration Curve.
