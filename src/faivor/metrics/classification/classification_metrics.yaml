@@ -69,16 +69,16 @@ performance:
     description: Compute precision-recall pairs for different probability thresholds.
     func: sklearn.metrics.precision_recall_curve
     is_torch: false
-  - function_name: hamming_loss
-    regular_name: Hamming Loss
-    description: Compute the average Hamming loss or Hamming distance between two sets of samples.
-    func: sklearn.metrics.hamming_loss
-    is_torch: false
-  - function_name: zero_one_loss
-    regular_name: Zero One Loss
-    description: Zero-one classification loss.
-    func: sklearn.metrics.zero_one_loss
-    is_torch: false
+#  - function_name: hamming_loss
+#    regular_name: Hamming Loss
+#    description: Compute the average Hamming loss or Hamming distance between two sets of samples.
+#    func: sklearn.metrics.hamming_loss
+#    is_torch: false
+#  - function_name: zero_one_loss
+#    regular_name: Zero One Loss
+#    description: Zero-one classification loss.
+#    func: sklearn.metrics.zero_one_loss
+#    is_torch: false
 #  - function_name: confusion_matrix
 #    regular_name: Confusion Matrix
 #    description: Compute confusion matrix to evaluate the accuracy of a classification.
