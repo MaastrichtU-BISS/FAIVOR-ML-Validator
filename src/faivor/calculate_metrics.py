@@ -229,7 +229,7 @@ class MetricsCalculator:
                 "Please ensure your data contains numeric values for both predictions and expected outputs."
             )
             
-        model_type = self.metadata_json.get("model_type", "regression")
+        model_type = self.metadata_json.get("model_type", "classification")
         
         # sensitive attribute
         try:
