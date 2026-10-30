@@ -255,7 +255,7 @@ async def retrieve_metrics(
         # Parse the model metadata
         md = json.loads(model_metadata)
         metadata = ModelMetadata(md)
-        model_type = metadata.metadata.get("model_type", "regression").lower()
+        model_type = metadata.metadata.get("model_type", "classification").lower()
 
         # detect appropriate metrics module based on model type
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
