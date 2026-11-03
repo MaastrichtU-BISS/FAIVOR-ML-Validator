@@ -10,6 +10,7 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter, detect_decimal
 from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
+from faivor.metrics.confidence import bootstrap_ci
 from faivor.utils import convert_to_json_serializable, safe_divide
 
 logger = logging.getLogger(__name__)
@@ -196,7 +197,12 @@ class MetricsCalculator:
                     
                 # general case, compute metric with just ytrue and ypred
                 result = metric.compute(y_true, y_pred)
-                all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                key = f"{category_name}.{metric.regular_name}"
+                all_metrics[key] = convert_to_json_serializable(result)
+                if category_name == "performance":
+                    ci = bootstrap_ci(metric.compute, y_true, y_pred,
+                                      stratify=len(np.unique(y_true)) <= 2)
+                    all_metrics[f"{key} 95% CI"] = list(ci) if ci else None
             except Exception as e:
                 all_metrics[f"{category_name}.{metric.regular_name}"] = f"Error: {str(e)}"    
     
