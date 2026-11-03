@@ -10,6 +10,7 @@ from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter, detect_decimal
 from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
+from faivor.metrics.confidence import bootstrap_ci
 from faivor.utils import convert_to_json_serializable, safe_divide
 from faivor.metrics.confidence import bootstrap_ci
 
@@ -78,6 +79,9 @@ class MetricsCalculator:
                     if true_val not in ('x', 'X', ''):
                         true_float = float(true_val)
                         pred_float = float(pred)
+
+                        if not np.isfinite(true_float) or not np.isfinite(pred_float):
+                            continue
                         
                         valid_indices.append(i)
                         y_true_values.append(true_float)

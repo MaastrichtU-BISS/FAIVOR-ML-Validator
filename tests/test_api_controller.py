@@ -102,3 +102,30 @@ def test_validate_model(shared_datadir: Path, model_name: str):
     assert data["metrics"]["overall_metrics"], "Overall metrics should not be empty."
     assert "threshold_metrics" in data["metrics"], "Metrics should include `threshold_metrics`."
     assert data["metrics"]["threshold_metrics"], "Threshold metrics should not be empty."
+
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_validate_model_returns_confidence_intervals(shared_datadir: Path, model_name: str):
+    """
+    Every performance metric should be accompanied by a 95% CI ([lower, upper] or null).
+    """
+    model_dir = shared_datadir / "models"
+    metadata_str = (model_dir / model_name / "metadata.json").read_text(encoding="utf-8")
+    data_metadata_str = (model_dir / model_name / "column_metadata.json").read_text(encoding="utf-8")
+
+    with open(model_dir / model_name / "data.csv", "rb") as csv_file:
+        files = {
+            "model_metadata": (None, metadata_str),
+            "csv_file": ("data.csv", csv_file, "text/csv"),
+            "data_metadata": (None, data_metadata_str),
+        }
+        response = client.post("/validate-model", files=files)
+
+    assert response.status_code == 200
+    overall = response.json()["metrics"]["overall_metrics"]
+    ci_keys = [k for k in overall if k.endswith(" 95% CI")]
+    assert ci_keys, "Expected '95% CI' entries in overall metrics."
+    for key in ci_keys:
+        assert key.startswith("performance.")
+        assert overall[key] is None or (
+            len(overall[key]) == 2 and overall[key][0] <= overall[key][1]
+        )

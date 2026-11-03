@@ -12,9 +12,11 @@ def bootstrap_ci(
     seed: Optional[int] = 42,
     stratify: bool = False,
     min_valid_fraction: float = 0.5,
+    min_samples: int = 10,
 ) -> Optional[Tuple[float, float]]:
     """
     Percentile bootstrap confidence interval for any metric(y_true, y_pred).
+
     Parameters
     ----------
     metric_fn : callable
@@ -28,19 +30,24 @@ def bootstrap_ci(
     stratify : bool
         Resample within each class of y_true (use for classification so that
         resamples never contain a single class).
+    min_samples : int
+        Return None for samples smaller than this (unstable intervals, e.g. small subgroups).
     min_valid_fraction : float
         Return None if fewer than this fraction of resamples produced a finite value.
+
     Returns
     -------
     (lower, upper) or None if the interval cannot be estimated.
     """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     n = len(y_true)
-    if n < 2:
+    if n < max(2, min_samples):
         return None
+
     rng = np.random.default_rng(seed)
     if stratify:
         class_idx = [np.flatnonzero(y_true == c) for c in np.unique(y_true)]
+
     values = []
     for _ in range(n_boot):
         if stratify:

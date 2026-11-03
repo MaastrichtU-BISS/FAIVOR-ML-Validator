@@ -437,9 +437,76 @@ async def validate_model(
         inputs, expected_outputs = create_json_payloads(metadata, tmp_path, columns_metadata)
 
         # Execute model and get predictions
-        execution_result = run_model_with_error_handling(metadata, inputs, model_name)
-        predictions = execution_result["predictions"]
-        docker_image_sha256 = execution_result.get("docker_image_sha256")
+        try:
+            execution_result = execute_model(metadata, inputs)
+            predictions = execution_result["predictions"]
+            docker_image_sha256 = execution_result.get("docker_image_sha256")
+        except ValueError as e:
+            # ValueError indicates data validation errors (invalid/out-of-range values)
+            # This is a client error (400), not a server error
+            error_msg = str(e)
+            raise create_error_response(
+                status_code=400,
+                error_code="DATA_VALIDATION_ERROR",
+                message="The model rejected the input data due to validation errors",
+                technical_details=error_msg,
+                metadata={
+                    "model_name": model_name,
+                    "error_type": "data_validation",
+                    "user_guidance": "Check that your data values are within the expected ranges for this model. "
+                                   "Review the model documentation for valid input constraints."
+                }
+            ) from e
+        except RuntimeError as e:
+            # Handle specific Docker/container errors
+            error_msg = str(e)
+            if "timeout" in error_msg.lower():
+                raise create_error_response(
+                    status_code=503,
+                    error_code="MODEL_EXECUTION_TIMEOUT",
+                    message="Model execution timed out",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name, "timeout": "300s"}
+                ) from e
+            elif "status code 4" in error_msg.lower() or "prediction failed" in error_msg.lower():
+                # Model execution failed (status 4) - likely a data processing error within the model
+                raise create_error_response(
+                    status_code=400,
+                    error_code="MODEL_PROCESSING_ERROR",
+                    message="The model failed to process the input data",
+                    technical_details=error_msg,
+                    metadata={
+                        "model_name": model_name,
+                        "error_type": "model_processing",
+                        "user_guidance": "The model encountered an error while processing your data. "
+                                       "This may be due to invalid values, missing data, or data format issues. "
+                                       "Check the technical details below for more information."
+                    }
+                ) from e
+            elif "docker" in error_msg.lower() or "container" in error_msg.lower():
+                raise create_error_response(
+                    status_code=503,
+                    error_code="CONTAINER_EXECUTION_ERROR",
+                    message="Failed to execute model in Docker container",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name}
+                ) from e
+            else:
+                raise create_error_response(
+                    status_code=500,
+                    error_code="MODEL_EXECUTION_FAILED",
+                    message="Model execution failed",
+                    technical_details=error_msg,
+                    metadata={"model_name": model_name}
+                ) from e
+        except Exception as e:
+            raise create_error_response(
+                status_code=500,
+                error_code="MODEL_EXECUTION_ERROR",
+                message="Unexpected error during model execution",
+                technical_details=str(e),
+                metadata={"model_name": model_name}
+            ) from e
 
         # Initialize MetricsCalculator
         try:
