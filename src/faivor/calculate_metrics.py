@@ -12,6 +12,7 @@ from faivor.metrics.regression import metrics as regression_metrics
 from faivor.metrics.classification import metrics as classification_metrics
 from faivor.metrics.confidence import bootstrap_ci
 from faivor.utils import convert_to_json_serializable, safe_divide
+from faivor.metrics.confidence import bootstrap_ci
 
 logger = logging.getLogger(__name__)
 
@@ -197,12 +198,11 @@ class MetricsCalculator:
                     
                 # general case, compute metric with just ytrue and ypred
                 result = metric.compute(y_true, y_pred)
-                key = f"{category_name}.{metric.regular_name}"
-                all_metrics[key] = convert_to_json_serializable(result)
-                if category_name == "performance":
-                    ci = bootstrap_ci(metric.compute, y_true, y_pred,
-                                      stratify=len(np.unique(y_true)) <= 2)
-                    all_metrics[f"{key} 95% CI"] = list(ci) if ci else None
+                all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                if category_name =="performance":
+                    is_clf = len(np.unique(y_true)) <= 2
+                    ci = bootstrap_ci(metric.compute, y_true, y_pred, stratify=is_clf)
+                    all_metrics[f"{category_name}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
             except Exception as e:
                 all_metrics[f"{category_name}.{metric.regular_name}"] = f"Error: {str(e)}"    
     
@@ -237,8 +237,8 @@ class MetricsCalculator:
                 "No valid numeric data pairs found for metric calculation. "
                 "Please ensure your data contains numeric values for both predictions and expected outputs."
             )
-            
-        model_type = self.metadata_json.get("model_type", "regression")
+        # TODO: update from model metadata outcome_type
+        model_type = self.metadata_json.get("model_type", "classification")
         
         # sensitive attribute
         try:
@@ -254,7 +254,8 @@ class MetricsCalculator:
         # detect appropriate metrics module based on model type
         if model_type.lower() not in ["classification", "regression"]:
             logger.warning(f"Unknown model type '{model_type}', defaulting to regression metrics")
-            
+
+        # todo: update for new metrics categories
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
                         else regression_metrics)
         
@@ -439,7 +440,10 @@ class MetricsCalculator:
             try:
                 tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
                 
-                # calculate derived metrics
+                # calculate derived metrics -
+                # TO DO: connect to classification_metrics.yaml
+                # + add Youden index, diagnostic odds ration at t, Kappa at t, Matthew's corr coef
+                # net benefit - in separate field
                 accuracy = (tp + tn) / (tp + tn + fp + fn)
                 precision = safe_divide(tp, tp + fp)
                 recall = safe_divide(tp, tp + fn)
@@ -502,7 +506,7 @@ class MetricsCalculator:
         if len(y_true) == 0:
             return {"error": "No valid numeric data pairs found for subgroup metric calculation"}
         
-        model_type = self.metadata_json.get("model_type", "regression")
+        model_type = self.metadata_json.get("model_type", "classification")
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
                         else regression_metrics)
         
@@ -610,6 +614,7 @@ class MetricsCalculator:
         }
         
         # for classification models, detect if we have probability outputs
+        # TODO: implement metrics from yaml file
         if model_type.lower() == "classification":
             # Get the data
             y_true, y_pred, _ = self.prepare_data()

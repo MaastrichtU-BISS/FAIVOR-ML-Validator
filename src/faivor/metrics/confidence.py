@@ -1,16 +1,13 @@
 import logging
 from typing import Callable, Optional, Tuple
-
 import numpy as np
-
 logger = logging.getLogger(__name__)
-
 
 def bootstrap_ci(
     metric_fn: Callable,
     y_true,
     y_pred,
-    n_boot: int = 1000,
+    n_boot: int = 100,
     confidence: float = 0.95,
     seed: Optional[int] = 42,
     stratify: bool = False,
@@ -63,11 +60,9 @@ def bootstrap_ci(
             continue
         if np.isfinite(v):
             values.append(v)
-
     if len(values) < max(2, int(min_valid_fraction * n_boot)):
         logger.debug("Too few valid bootstrap resamples (%d/%d)", len(values), n_boot)
         return None
-
     alpha = 1.0 - confidence
     lower, upper = np.percentile(values, [100 * alpha / 2, 100 * (1 - alpha / 2)])
     return float(lower), float(upper)

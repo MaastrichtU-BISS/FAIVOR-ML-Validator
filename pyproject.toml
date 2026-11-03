@@ -27,6 +27,8 @@ uvicorn = "^0.31.1"
 httpx = "^0.28.1"
 docker = "^7.1.0"
 python-multipart = "^0.0.20"
+statsmodels = "^0.14.4"
+matplotlib = "^3.10.0"
 torch = { version = "2.6.0+cpu", source = "pytorch-cpu" }
 
 
