@@ -253,6 +253,7 @@ async def retrieve_metrics(
     """
     try:
         # Parse the model metadata
+        # TODO: update to outcome-type
         md = json.loads(model_metadata)
         metadata = ModelMetadata(md)
         model_type = metadata.metadata.get("model_type", "classification").lower()
@@ -470,7 +471,7 @@ async def validate_model(
             ) from e
 
         # Calculate threshold metrics (if applicable)
-        
+        # TODO: update to outcome_type
         threshold_metrics = {}
         model_type = metadata.metadata.get('model_type', 'classification').lower()
         if model_type == "classification":
