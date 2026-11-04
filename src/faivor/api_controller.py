@@ -298,7 +298,7 @@ async def retrieve_metrics(
             MetricDescription(
                 name=metric.regular_name, description=metric.description, type="classfication"
             )
-            for metric in metrics_module.CLASSIFICATION_METRICS
+            for metric in metrics_module.CLASSIFICATION_METRICS_T
         ]
         clinical_utility_metrics = [
             MetricDescription(

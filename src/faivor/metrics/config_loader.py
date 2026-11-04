@@ -13,7 +13,7 @@ def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetri
     overall_performance = []
     discrimination = []
     calibration = []
-    classification = []
+    classification_t = []
     clinical_utility = []
     fairness = []
     explainability = []
@@ -38,7 +38,7 @@ def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetri
             if category == 'overall_performance':
                 overall_performance.append(metric)
             elif category == 'classification':
-                classification.append(metric)
+                classification_t.append(metric)
             elif category == 'clinical_utility':
                 clinical_utility.append(metric)
             elif category == 'calibration':
@@ -50,4 +50,4 @@ def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetri
             elif category == 'explainability':
                 explainability.append(metric)
 
-    return discrimination, calibration,classification, clinical_utility, overall_performance, fairness, explainability
+    return discrimination, calibration,classification_t, clinical_utility, overall_performance, fairness, explainability

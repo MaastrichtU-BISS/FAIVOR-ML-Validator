@@ -260,6 +260,7 @@ class MetricsCalculator:
                         else regression_metrics)
 
         # calc metrics for each category
+        # todo: add calibration curve
         try:
             self._compute_metrics_for_category(
                 metrics_module.discrimination, "discrimination",
@@ -448,44 +449,72 @@ class MetricsCalculator:
         # calculate metrics for different thresholds, we'll go with the extreme case of 101 thresholds from 0.00 to 1.00
         thresholds = np.linspace(0, 1, 101)
         threshold_metrics = {}
-        
+
+        #                 for metric in metrics_collection:
+        #
+        #                 # general case, compute metric with just ytrue and ypred
+        #                 result = metric.compute(y_true, y_pred)
+        #                 all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
+        #                 if category_name in ["overall_performance", "discrimination", "clinical_utility", "classification", "calibration"]:
+        #                     is_clf = len(np.unique(y_true)) <= 2
+        #                     ci = bootstrap_ci(metric.compute, y_true, y_pred, stratify=is_clf)
+        #                     all_metrics[f"{category_name}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
+        #             except Exception as e:
+        #                 all_metrics[f"{category_name}.{metric.regular_name}"] = f"Error: {str(e)}"
+
+        # TODO: update from model metadata outcome_type
+        model_type = self.metadata_json.get("model_type", "classification")
+
+        # todo: update for new metrics categories
+        metrics_module = (classification_metrics if model_type.lower() == "classification"
+                          else regression_metrics)
+
         for threshold in thresholds:
             # create binary predictions using this threshold
             y_pred_binary = (y_prob >= threshold).astype(int)
             
             # calculate confusion matrix
-            try:
-                tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
-                
+
+            for metric in metrics_module.classification_t:
+                try:
+                    result = metric.compute(y_true, y_pred_binary)
+                    threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                    is_clf = len(np.unique(y_true)) <= 2
+                    ci = bootstrap_ci(metric.compute, y_true, y_pred_binary, stratify=is_clf)
+                    threshold_metrics[f"{str(threshold)}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
+                except Exception as e:
+                    threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = f"Error: {str(e)}"
+
+                # tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
                 # calculate derived metrics -
-                # TO DO: connect to classification_metrics.yaml
+                # TODO: connect to classification_metrics.yaml
                 # + add Youden index, diagnostic odds ration at t, Kappa at t, Matthew's corr coef
                 # net benefit - in separate field
-                accuracy = (tp + tn) / (tp + tn + fp + fn)
-                precision = safe_divide(tp, tp + fp)
-                recall = safe_divide(tp, tp + fn)
-                specificity = safe_divide(tn, tn + fp)
-                f1_score = safe_divide(2 * precision * recall, precision + recall)
-                fpr = safe_divide(fp, fp + tn)
-                
-                # stash metrics
-                threshold_metrics[str(threshold)] = {
-                    "confusion_matrix": {
-                        "tn": int(tn),
-                        "fp": int(fp),
-                        "fn": int(fn),
-                        "tp": int(tp)
-                    },
-                    "accuracy": float(accuracy),
-                    "precision": float(precision),
-                    "recall": float(recall),
-                    "specificity": float(specificity),
-                    "f1_score": float(f1_score),
-                    "fpr": float(fpr)
-                }
-            except Exception as e:
-                threshold_metrics[str(threshold)] = {"error": f"Error computing metrics: {str(e)}"}
-        
+                # accuracy = (tp + tn) / (tp + tn + fp + fn)
+                # precision = safe_divide(tp, tp + fp)
+                # recall = safe_divide(tp, tp + fn)
+                # specificity = safe_divide(tn, tn + fp)
+                # f1_score = safe_divide(2 * precision * recall, precision + recall)
+                # fpr = safe_divide(fp, fp + tn)
+                #
+                # # stash metrics
+                # threshold_metrics[str(threshold)] = {
+                #     "confusion_matrix": {
+                #         "tn": int(tn),
+                #         "fp": int(fp),
+                #         "fn": int(fn),
+                #         "tp": int(tp)
+                #     },
+                #     "accuracy": float(accuracy),
+                #     "precision": float(precision),
+                #     "recall": float(recall),
+                #     "specificity": float(specificity),
+                #     "f1_score": float(f1_score),
+                #     "fpr": float(fpr)
+                # }
+            # except Exception as e:
+            #     threshold_metrics[str(threshold)] = {"error": f"Error computing metrics: {str(e)}"}
+
         # combine
         results = {
             "probability_preprocessing": transformation_message,

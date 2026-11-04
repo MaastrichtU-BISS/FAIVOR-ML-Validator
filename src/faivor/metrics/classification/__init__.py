@@ -4,7 +4,7 @@ from .classification_metrics import (
     EXPLAINABILITY_METRICS as explainability,
     DISCRIMINATION_METRICS as discrimination,
     CALIBRATION_METRICS as calibration,
-    CLASSIFICATION_METRICS as classification,
+    CLASSIFICATION_METRICS_T as classification_t,
     CLINICAL_UTILITY_METRICS as clinical_utility,
 )
 
@@ -13,7 +13,7 @@ class ClassificationMetrics:
         self.overall_performance = overall_performance
         self.discrimination = discrimination
         self.clinical_utility = clinical_utility
-        self.classification = classification
+        self.classification_t = classification_t
         self.calibration = calibration
         self.fairness = fairness
         self.explainability = explainability
