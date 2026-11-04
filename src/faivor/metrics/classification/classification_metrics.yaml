@@ -120,10 +120,10 @@ classification_t:
     func: sklearn.metrics.jaccard_score
     is_torch: false
 
-clinical_utility:
+clinical_utility: []
 
 
-fairness:
+fairness: []
 #  - function_name: disparate_impact
 #    regular_name: Disparate Impact
 #    description: Calculates the disparate impact for classification by comparing the rate of favorable outcomes for different groups.
@@ -140,7 +140,7 @@ fairness:
 #    func: faivor.metrics.classification.fairness.equal_opportunity_difference
 #    is_torch: false
 #
-explainability:
+explainability: []
 #  - function_name: prediction_entropy
 #    regular_name: Prediction Entropy
 #    description: Calculates the entropy of predictions to measure model uncertainty.

@@ -479,9 +479,9 @@ class MetricsCalculator:
                 try:
                     result = metric.compute(y_true, y_pred_binary)
                     threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = convert_to_json_serializable(result)
-                    is_clf = len(np.unique(y_true)) <= 2
-                    ci = bootstrap_ci(metric.compute, y_true, y_pred_binary, stratify=is_clf)
-                    threshold_metrics[f"{str(threshold)}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
+                    # is_clf = len(np.unique(y_true)) <= 2
+                    # ci = bootstrap_ci(metric.compute, y_true, y_pred_binary, stratify=is_clf)
+                    # threshold_metrics[f"{str(threshold)}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
                 except Exception as e:
                     threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = f"Error: {str(e)}"
 
