@@ -18,7 +18,7 @@ def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetri
     fairness = []
     explainability = []
 
-    for category in ['overall_performance', 'discrimination','calibration','classification','clinical_utility', 'fairness', 'explainability']:
+    for category in ['overall_performance', 'discrimination','calibration','classification_t','clinical_utility', 'fairness', 'explainability']:
         for metric_config in config.get(category, []):
             # Resolve the function/class from string
             func_str = metric_config['func']
@@ -37,7 +37,7 @@ def load_metrics(yaml_filename: str) -> tuple[list[ModelMetric], list[ModelMetri
 
             if category == 'overall_performance':
                 overall_performance.append(metric)
-            elif category == 'classification':
+            elif category == 'classification_t':
                 classification_t.append(metric)
             elif category == 'clinical_utility':
                 clinical_utility.append(metric)

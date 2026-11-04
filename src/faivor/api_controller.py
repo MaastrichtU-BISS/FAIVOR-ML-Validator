@@ -239,7 +239,7 @@ class MetricDescription(BaseModel):
     description=(
         "Returns a list of MetricDescription objects containing the names and descriptions "
         "of metrics applicable to the model based on the provided FAIR model metadata. "
-        "Optionally filter by category (`overall_performance`, `fairness`, `explainability`, `calibration`, `classification`, `clinical_utility`)."
+        "Optionally filter by category (`overall_performance`, `fairness`, `explainability`, `calibration`, `classification_t`, `clinical_utility`)."
     ),
 )
 async def retrieve_metrics(
@@ -296,7 +296,7 @@ async def retrieve_metrics(
         ]
         classification_metrics_t = [
             MetricDescription(
-                name=metric.regular_name, description=metric.description, type="classfication"
+                name=metric.regular_name, description=metric.description, type="classfication_t"
             )
             for metric in metrics_module.CLASSIFICATION_METRICS_T
         ]
