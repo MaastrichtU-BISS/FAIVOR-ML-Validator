@@ -1,5 +1,53 @@
 # TODO: split the file in two for descrimination/calibration/overall survival and threshold-based metrics
-performance:
+discrimination:
+  - function_name: roc_auc_score
+    regular_name: ROC AUC Score
+    description: Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC) from prediction scores.
+    func: sklearn.metrics.roc_auc_score
+    is_torch: false
+  - function_name: average_precision_score
+    regular_name: AUPRC Score
+    description: Compute average precision (AP) from prediction scores, corresponds to area under Precision-Recall curve.
+    func: sklearn.metrics.average_precision_score
+    is_torch: false
+calibration:
+  - function_name: calibration_intercept
+    regular_name: Calibration Intercept
+    description: Compute the intercept of calibration curve.
+    func: faivor.metrics.classification.calibration_metrics.calibration_intercept
+    is_torch: false
+  - function_name: calibration_slope
+    regular_name: Calibration Slope
+    description: Compute the slope of calibration curve.
+    func: faivor.metrics.classification.calibration_metrics.calibration_slope
+    is_torch: false
+  - function_name: O_E_ratio
+    regular_name: O:E ratio
+    description: Compute the observed over expected ratio.
+    func: faivor.metrics.classification.calibration_metrics.O_E_ratio
+    is_torch: false
+overall_performance:
+#  - function_name: brier_score_loss
+#    regular_name: Brier Score Loss
+#    description: Compute the Brier score loss.
+#    func: sklearn.metrics.brier_score_loss
+#    is_torch: false
+#  - function_name: log_loss
+#    regular_name: Log Loss
+#    description: Log loss, aka logistic regression loss or cross-entropy loss.
+#    func: sklearn.metrics.log_loss
+#    is_torch: false
+  - function_name: explained_variance_score
+    regular_name: Explained Variance Score
+    description: Measures the proportion of variance explained by the model.
+    func: sklearn.metrics.explained_variance_score
+    is_torch: false
+  - function_name: mean_absolute_error
+    regular_name: Mean Absolute Error
+    description: The mean of the absolute errors between true and predicted values.
+    func: sklearn.metrics.mean_absolute_error
+    is_torch: false
+#classification:
 #  - function_name: accuracy_score
 #    regular_name: Accuracy Score
 #    description: Accuracy classification score.
@@ -30,31 +78,42 @@ performance:
 #    description: Recall classification score.
 #    func: sklearn.metrics.recall_score
 #    is_torch: false
-  - function_name: roc_auc_score
-    regular_name: ROC AUC Score
-    description: Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC) from prediction scores.
-    func: sklearn.metrics.roc_auc_score
-    is_torch: false
-#  - function_name: jaccard_score
-#    regular_name: Jaccard Score
-#    description: Jaccard similarity coefficient.
-#    func: sklearn.metrics.jaccard_score
+#. - function_name: confusion_matrix
+#    regular_name: Confusion Matrix
+#    description: Compute confusion matrix to evaluate the accuracy of a classification.
+#    func: sklearn.metrics.confusion_matrix
 #    is_torch: false
-#  - function_name: log_loss
-#    regular_name: Log Loss
-#    description: Log loss, aka logistic regression loss or cross-entropy loss.
-#    func: sklearn.metrics.log_loss
+#  - function_name: negative_predictive_value
+#    regular_name: Negative Predictive Value
+#    description: Compute Negative Predictive Value from a confusion matrix.
+#    func: faivor.metrics.classification.performance.negative_predictive_value
+#    is_torch: false
+#  - function_name: positive_predictive_value
+#    regular_name: Positive Predictive Value
+#    description: Compute Positive Predictive Value from a confusion matrix.
+#    func: faivor.metrics.classification.performance.positive_predictive_value
+#    is_torch: false
+#  - function_name: specificity
+#    regular_name: Specificity
+#    description: Compute specificity.
+#    func: faivor.metrics.classification.performance.specificity
 #    is_torch: false
 #  - function_name: matthews_corrcoef
 #    regular_name: Matthews Correlation Coefficient
 #    description: Compute the Matthews correlation coefficient (MCC).
 #    func: sklearn.metrics.matthews_corrcoef
 #    is_torch: false
-#  - function_name: brier_score_loss
-#    regular_name: Brier Score Loss
-#    description: Compute the Brier score loss.
-#    func: sklearn.metrics.brier_score_loss
+#clinical_utility:
+
+
+#  - function_name: jaccard_score
+#    regular_name: Jaccard Score
+#    description: Jaccard similarity coefficient.
+#    func: sklearn.metrics.jaccard_score
 #    is_torch: false
+
+
+
 ##  - function_name: top_k_accuracy_score
 ##    regular_name: Top K Accuracy Score
 ##    description: Top-k accuracy classification score.
@@ -80,31 +139,8 @@ performance:
 #    description: Zero-one classification loss.
 #    func: sklearn.metrics.zero_one_loss
 #    is_torch: false
-#  - function_name: confusion_matrix
-#    regular_name: Confusion Matrix
-#    description: Compute confusion matrix to evaluate the accuracy of a classification.
-#    func: sklearn.metrics.confusion_matrix
-#    is_torch: false
-#  - function_name: negative_predictive_value
-#    regular_name: Negative Predictive Value
-#    description: Compute Negative Predictive Value from a confusion matrix.
-#    func: faivor.metrics.classification.performance.negative_predictive_value
-#    is_torch: false
-#  - function_name: positive_predictive_value
-#    regular_name: Positive Predictive Value
-#    description: Compute Positive Predictive Value from a confusion matrix.
-#    func: faivor.metrics.classification.performance.positive_predictive_value
-#    is_torch: false
-#  - function_name: specificity
-#    regular_name: Specificity
-#    description: Compute specificity.
-#    func: faivor.metrics.classification.performance.specificity
-#    is_torch: false
-#  - function_name: calibration_curve
-#    regular_name: Calibration Curve
-#    description: Compute Calibration Curve.
-#    func: sklearn.calibration.calibration_curve
-#    is_torch: false
+#
+
 
 #fairness:
 #  - function_name: disparate_impact

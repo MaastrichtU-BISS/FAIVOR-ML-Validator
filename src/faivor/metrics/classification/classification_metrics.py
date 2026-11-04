@@ -1,3 +1,3 @@
 from faivor.metrics.config_loader import load_metrics
 
-PERFORMANCE_METRICS, FAIRNESS_METRICS, EXPLAINABILITY_METRICS = load_metrics("classification/classification_metrics.yaml")
+DISCRIMINATION_METRICS, CALIBRATION_METRICS, CLASSIFICATION_METRICS, CLINICAL_UTILITY_METRICS, OVERALL_PERFORMANCE_METRICS, FAIRNESS_METRICS, EXPLAINABILITY_METRICS = load_metrics("classification/classification_metrics.yaml")

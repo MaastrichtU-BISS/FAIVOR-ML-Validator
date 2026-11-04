@@ -239,7 +239,7 @@ class MetricDescription(BaseModel):
     description=(
         "Returns a list of MetricDescription objects containing the names and descriptions "
         "of metrics applicable to the model based on the provided FAIR model metadata. "
-        "Optionally filter by category (`performance`, `fairness`, `explainability`)."
+        "Optionally filter by category (`overall_performance`, `fairness`, `explainability`, `calibration`, `classification`, `clinical_utility`)."
     ),
 )
 async def retrieve_metrics(
@@ -263,11 +263,12 @@ async def retrieve_metrics(
                         else regression_metrics)
 
         # Collect metrics
-        performance_metrics = [
+        # DISCRIMINATION, CALIBRATION, CLASSIFICATION, CLINICAL_UTILITY,
+        overall_performance_metrics = [
                 MetricDescription(
-                    name=metric.regular_name, description=metric.description, type = "performance"
+                    name=metric.regular_name, description=metric.description, type = "overall_performance"
                 )
-                for metric in metrics_module.PERFORMANCE_METRICS
+                for metric in metrics_module.OVERALL_PERFORMANCE_METRICS
             ]
         fairness_metrics = [
                 MetricDescription(
@@ -281,10 +282,33 @@ async def retrieve_metrics(
                 )
                 for metric in metrics_module.EXPLAINABILITY_METRICS
             ]
-
+        discrimination_metrics = [
+            MetricDescription(
+                name=metric.regular_name, description=metric.description, type="discrimination"
+            )
+            for metric in metrics_module.DISCRIMINATION_METRICS
+        ]
+        calibration_metrics = [
+            MetricDescription(
+                name=metric.regular_name, description=metric.description, type="calibration"
+            )
+            for metric in metrics_module.CALIBRATION_METRICS
+        ]
+        classification_metrics_t = [
+            MetricDescription(
+                name=metric.regular_name, description=metric.description, type="classfication"
+            )
+            for metric in metrics_module.CLASSIFICATION_METRICS
+        ]
+        clinical_utility_metrics = [
+            MetricDescription(
+                name=metric.regular_name, description=metric.description, type="clinical_utility"
+            )
+            for metric in metrics_module.CLINICAL_UTILITY_METRICS
+        ]
 
         # Return all metrics as a flat list
-        return performance_metrics + fairness_metrics + explainability_metrics
+        return overall_performance_metrics + fairness_metrics + explainability_metrics + discrimination_metrics + calibration_metrics + classification_metrics_t + clinical_utility_metrics
 
     except json.JSONDecodeError as e:
         raise create_error_response(

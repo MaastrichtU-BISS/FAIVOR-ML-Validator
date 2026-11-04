@@ -199,7 +199,7 @@ class MetricsCalculator:
                 # general case, compute metric with just ytrue and ypred
                 result = metric.compute(y_true, y_pred)
                 all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
-                if category_name =="performance":
+                if category_name in ["overall_performance", "discrimination", "clinical_utility", "classification", "calibration"]:
                     is_clf = len(np.unique(y_true)) <= 2
                     ci = bootstrap_ci(metric.compute, y_true, y_pred, stratify=is_clf)
                     all_metrics[f"{category_name}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
@@ -258,17 +258,34 @@ class MetricsCalculator:
         # todo: update for new metrics categories
         metrics_module = (classification_metrics if model_type.lower() == "classification" 
                         else regression_metrics)
-        
+
         # calc metrics for each category
         try:
             self._compute_metrics_for_category(
-                metrics_module.performance, "performance", 
+                metrics_module.discrimination, "discrimination",
                 y_true, y_pred, all_metrics
             )
         except Exception as e:
-            logger.error(f"Failed to compute performance metrics: {e}")
-            all_metrics["performance.error"] = f"Failed to compute performance metrics: {str(e)}"
-        
+            logger.error(f"Failed to compute discrimination metrics: {e}")
+            all_metrics["discrimination.error"] = f"Failed to compute discrimination metrics: {str(e)}"
+        try:
+            self._compute_metrics_for_category(
+                metrics_module.overall_performance, "overall_performance",
+                y_true, y_pred, all_metrics
+            )
+        except Exception as e:
+            logger.error(f"Failed to compute overall_performance metrics: {e}")
+            all_metrics["overall_performance.error"] = f"Failed to compute overall_performance metrics: {str(e)}"
+
+        try:
+            self._compute_metrics_for_category(
+                metrics_module.calibration, "calibration",
+                y_true, y_pred, all_metrics
+            )
+        except Exception as e:
+            logger.error(f"Failed to compute calibration metrics: {e}")
+            all_metrics["calibration.error"] = f"Failed to compute calibration metrics: {str(e)}"
+
         try:
             self._compute_metrics_for_category(
                 metrics_module.fairness, "fairness", 
@@ -561,7 +578,7 @@ class MetricsCalculator:
                 }
                 
                 self._compute_metrics_for_category(
-                    metrics_module.performance, "performance", 
+                    metrics_module.overall_performance, "overall_performance",
                     subgroup_y_true, subgroup_y_pred, subgroup_all_metrics
                 )
                 
