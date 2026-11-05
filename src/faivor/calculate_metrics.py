@@ -445,22 +445,8 @@ class MetricsCalculator:
             }
         except Exception as e:
             pr_curve_data = {"error": f"Could not compute PR curve: {str(e)}"}
-        
-        # calculate metrics for different thresholds, we'll go with the extreme case of 101 thresholds from 0.00 to 1.00
-        thresholds = np.linspace(0, 1, 101)
-        threshold_metrics = {}
 
-        #                 for metric in metrics_collection:
-        #
-        #                 # general case, compute metric with just ytrue and ypred
-        #                 result = metric.compute(y_true, y_pred)
-        #                 all_metrics[f"{category_name}.{metric.regular_name}"] = convert_to_json_serializable(result)
-        #                 if category_name in ["overall_performance", "discrimination", "clinical_utility", "classification", "calibration"]:
-        #                     is_clf = len(np.unique(y_true)) <= 2
-        #                     ci = bootstrap_ci(metric.compute, y_true, y_pred, stratify=is_clf)
-        #                     all_metrics[f"{category_name}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
-        #             except Exception as e:
-        #                 all_metrics[f"{category_name}.{metric.regular_name}"] = f"Error: {str(e)}"
+        # calculate metrics for different thresholds, we'll go with the extreme case of 101 thresholds from 0.00 to 1.00
 
         # TODO: update from model metadata outcome_type
         model_type = self.metadata_json.get("model_type", "classification")
@@ -469,21 +455,24 @@ class MetricsCalculator:
         metrics_module = (classification_metrics if model_type.lower() == "classification"
                           else regression_metrics)
 
+        thresholds = np.linspace(0, 1, 101)
+        threshold_metrics = {metric.regular_name: [] for metric in metrics_module.classification_t}
+        threshold_metrics["thresholds"] = [thresholds]
+
         for threshold in thresholds:
             # create binary predictions using this threshold
             y_pred_binary = (y_prob >= threshold).astype(int)
             
             # calculate confusion matrix
-
             for metric in metrics_module.classification_t:
                 try:
                     result = metric.compute(y_true, y_pred_binary)
-                    threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = convert_to_json_serializable(result)
+                    threshold_metrics[metric.regular_name].append(convert_to_json_serializable(result))
                     # is_clf = len(np.unique(y_true)) <= 2
                     # ci = bootstrap_ci(metric.compute, y_true, y_pred_binary, stratify=is_clf)
                     # threshold_metrics[f"{str(threshold)}.{metric.regular_name} 95% CI"] = list(ci) if ci else None
                 except Exception as e:
-                    threshold_metrics[f"{str(threshold)}.{metric.regular_name}"] = f"Error: {str(e)}"
+                    threshold_metrics[metric.regular_name].append(f"Error: {str(e)}")
 
                 # tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
                 # calculate derived metrics -
