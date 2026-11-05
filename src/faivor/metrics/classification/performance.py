@@ -23,7 +23,7 @@ def negative_predictive_value(y_true, y_pred) -> float:
     """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     tn, fp, fn, tp=skm.confusion_matrix(y_true,y_pred).ravel()
-    return tn/(tn+fn)
+    return tn/(tn+fn) if tn + fn else 0.0
 
 def positive_predictive_value(y_true, y_pred) -> float:
     """
@@ -41,7 +41,7 @@ def positive_predictive_value(y_true, y_pred) -> float:
         """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     tn, fp, fn, tp=skm.confusion_matrix(y_true,y_pred).ravel()
-    return tp/(tp+fp)
+    return tp/(tp+fp) if tp + fp else 0.0
 
 def specificity(y_true, y_pred) -> float:
     """

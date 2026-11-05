@@ -79,11 +79,11 @@ classification_t:
     description: Recall classification score.
     func: sklearn.metrics.recall_score
     is_torch: false
-  - function_name: confusion_matrix
-    regular_name: Confusion Matrix
-    description: Compute confusion matrix to evaluate the accuracy of a classification.
-    func: sklearn.metrics.confusion_matrix
-    is_torch: false
+#  - function_name: confusion_matrix
+#    regular_name: Confusion Matrix
+#    description: Compute confusion matrix to evaluate the accuracy of a classification.
+#    func: sklearn.metrics.confusion_matrix
+#    is_torch: false
   - function_name: negative_predictive_value
     regular_name: Negative Predictive Value
     description: Compute Negative Predictive Value from a confusion matrix.

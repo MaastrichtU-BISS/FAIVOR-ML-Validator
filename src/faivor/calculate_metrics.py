@@ -457,13 +457,13 @@ class MetricsCalculator:
 
         thresholds = np.linspace(0, 1, 101)
         threshold_metrics = {metric.regular_name: [] for metric in metrics_module.classification_t}
-        threshold_metrics["thresholds"] = [thresholds]
+        threshold_metrics["thresholds"] = convert_to_json_serializable(thresholds)
 
         for threshold in thresholds:
             # create binary predictions using this threshold
             y_pred_binary = (y_prob >= threshold).astype(int)
             
-            # calculate confusion matrix
+            # calculate metrics from classification group
             for metric in metrics_module.classification_t:
                 try:
                     result = metric.compute(y_true, y_pred_binary)
@@ -662,7 +662,7 @@ class MetricsCalculator:
                     if not np.all(np.isin(y_pred, [0, 1])):
                         is_prob_output = True
             
-            # ff probability outputs, calculate threshold metrics
+            # if probability outputs, calculate threshold metrics
             if is_prob_output:
                 try:
                     threshold_metrics = self.calculate_threshold_metrics()
