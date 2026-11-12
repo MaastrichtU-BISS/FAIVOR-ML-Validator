@@ -90,4 +90,3 @@ def O_E_ratio(y_true, y_pred) -> float:
     obs, exp = np.sum(y_true), np.sum(y_pred)
     return float(obs / exp) if exp > 0 else np.nan
 
-def calibration_
