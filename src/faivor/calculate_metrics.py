@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
+from calzone.utils import *
 
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter, detect_decimal
@@ -446,6 +447,24 @@ class MetricsCalculator:
         except Exception as e:
             pr_curve_data = {"error": f"Could not compute PR curve: {str(e)}"}
 
+        # prepare data for calibration curve
+        try:
+            reliability, confidence, bin_edge, bin_count = reliability_diagram(
+                y_true=y_true,
+                y_proba=y_prob,
+                num_bins=15,
+                class_to_plot=None,
+                save_path=None,
+            )
+            calibration_curve_data = {
+                "reliabilities": convert_to_json_serializable(reliability),
+                "confidence": convert_to_json_serializable(confidence),
+                "bin_count": convert_to_json_serializable(bin_count)
+            }
+
+        except Exception as e:
+            calibration_curve_data = {"error": f"Could not compute calibration curve: {str(e)}"}
+
         # calculate metrics for different thresholds, we'll go with the extreme case of 101 thresholds from 0.00 to 1.00
 
         # TODO: update from model metadata outcome_type
@@ -476,40 +495,17 @@ class MetricsCalculator:
 
                 # tn, fp, fn, tp = confusion_matrix(y_true, y_pred_binary, labels=[0, 1]).ravel()
                 # calculate derived metrics -
-                # TODO: connect to classification_metrics.yaml
                 # + add Youden index, diagnostic odds ration at t, Kappa at t, Matthew's corr coef
                 # net benefit - in separate field
-                # accuracy = (tp + tn) / (tp + tn + fp + fn)
-                # precision = safe_divide(tp, tp + fp)
-                # recall = safe_divide(tp, tp + fn)
-                # specificity = safe_divide(tn, tn + fp)
-                # f1_score = safe_divide(2 * precision * recall, precision + recall)
-                # fpr = safe_divide(fp, fp + tn)
-                #
-                # # stash metrics
-                # threshold_metrics[str(threshold)] = {
-                #     "confusion_matrix": {
-                #         "tn": int(tn),
-                #         "fp": int(fp),
-                #         "fn": int(fn),
-                #         "tp": int(tp)
-                #     },
-                #     "accuracy": float(accuracy),
-                #     "precision": float(precision),
-                #     "recall": float(recall),
-                #     "specificity": float(specificity),
-                #     "f1_score": float(f1_score),
-                #     "fpr": float(fpr)
-                # }
-            # except Exception as e:
-            #     threshold_metrics[str(threshold)] = {"error": f"Error computing metrics: {str(e)}"}
+
 
         # combine
         results = {
             "probability_preprocessing": transformation_message,
             "roc_curve": roc_curve_data,
             "pr_curve": pr_curve_data,
-            "threshold_metrics": threshold_metrics
+            "threshold_metrics": threshold_metrics,
+            "calibration_curve": calibration_curve_data,
         }
         
         return results        

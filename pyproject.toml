@@ -30,6 +30,7 @@ python-multipart = "^0.0.20"
 statsmodels = "^0.14.4"
 matplotlib = "^3.10.0"
 torch = { version = "2.6.0+cpu", source = "pytorch-cpu" }
+calzone = {version = "0.1.0", source = "git+https://github.com/DIDSR/calzone.git#egg=calzone"}
 
 
 [tool.poetry.group.dev.dependencies]

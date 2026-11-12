@@ -1,6 +1,6 @@
 from sklearn.linear_model import LogisticRegression
 import numpy as np
-
+import calzone.metrics import CalibrationMetrics
 """
     Script to calculate calibration metrics as part of validation procedure (not model update)
     
@@ -89,3 +89,5 @@ def O_E_ratio(y_true, y_pred) -> float:
 
     obs, exp = np.sum(y_true), np.sum(y_pred)
     return float(obs / exp) if exp > 0 else np.nan
+
+def calibration_
