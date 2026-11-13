@@ -25,6 +25,16 @@ calibration:
     description: Compute the observed over expected ratio.
     func: faivor.metrics.classification.calibration_metrics.O_E_ratio
     is_torch: false
+  - function_name: ECE
+    regular_name: ECE
+    description: Expected calibration error.
+    func: faivor.metrics.classification.calibration_metrics.calibration_ECE
+    is_torch: false
+  - function_name: ICI
+    regular_name: ICI
+    description: Integrated Calibration Index.
+    func: faivor.metrics.classification.calibration_metrics.calibration_ICI
+    is_torch: false
 overall_performance:
 # TODO: risk distribution plots for each outcome category
   - function_name: brier_score_loss

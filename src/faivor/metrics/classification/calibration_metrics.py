@@ -1,6 +1,7 @@
 from sklearn.linear_model import LogisticRegression
 import numpy as np
-import calzone.metrics import CalibrationMetrics
+from calzone.utils import reliability_diagram
+from calzone.metrics import calculate_ece_mce, lowess_regression_analysis
 """
     Script to calculate calibration metrics as part of validation procedure (not model update)
     
@@ -90,3 +91,53 @@ def O_E_ratio(y_true, y_pred) -> float:
     obs, exp = np.sum(y_true), np.sum(y_pred)
     return float(obs / exp) if exp > 0 else np.nan
 
+def calibration_ECE(y_true, y_pred) -> float:
+    """
+        Calculates the ECE - Expected Calibration Error.
+        Based on the calzone tool. https://calzone-docs.readthedocs.io/en/latest/notebooks/ece_mce.html
+
+        Parameters
+        ----------
+        y_true : array-like of shape (n_samples,)
+            The true target values.
+        y_pred : array-like of shape (n_samples,)
+
+        Returns
+        -------
+        float
+            ECE.
+        """
+
+    reliability, confidence, bin_edge, bin_count = reliability_diagram(
+        y_true=y_true,
+        y_proba=y_pred,
+        num_bins=15,
+        class_to_plot=None,
+        save_path=None,
+    )
+
+    ece_h_top_class, mce_h_top_class = calculate_ece_mce(reliability, confidence, bin_counts=bin_count)
+
+    return ece_h_top_class
+
+def calibration_ICI(y_true, y_pred) -> float:
+    """
+            Calculates the ICI - Integrated Calibration Index.
+            Based on calzone tool https://calzone-docs.readthedocs.io/en/latest/notebooks/ici.html
+
+            Parameters
+            ----------
+            y_true : array-like of shape (n_samples,)
+                The true target values.
+            y_pred : array-like of shape (n_samples,)
+
+            Returns
+            -------
+            float
+                ICI.
+            """
+    loess_ici, lowess_fit_p, lowess_fit_p_correct = lowess_regression_analysis(y_true,
+                                                                               y_pred,
+                                                                               class_to_calculate=1, span=0.5,
+                                                                               delta=0.001, it=0)
+    return loess_ici

@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score, confusion_matrix
-from calzone.utils import *
+from calzone.utils import reliability_diagram
 
 from faivor.model_metadata import ModelMetadata
 from faivor.parse_data import detect_delimiter, detect_decimal
